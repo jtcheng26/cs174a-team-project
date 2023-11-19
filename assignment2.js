@@ -76,6 +76,14 @@ class Base_Scene extends Scene {
         };
         // The white material and basic shader are used for drawing the outline.
         this.white = new Material(new defs.Basic_Shader());
+        this.levels = []
+        for (let i = 0; i < 100; i++) {
+            let temp = [];
+            for (let j = 0; j < 13; j++) {
+                temp.push(Math.round(Math.random()));
+            }
+            this.levels.push(temp);
+        }
     }
 
     display(context, program_state) {
@@ -130,21 +138,28 @@ export class Assignment2 extends Base_Scene {
         return model_transform;
     }
 
-    generateFaces(num_sides, context, program_state, model_transform) {
-        const blue = hex_color("#1a9ffa");
+    generateFaces(num_sides, panes_per_side, context, program_state, model_transform, ring_color, row) {
+        const blue = color(255 * Math.random(), 255 * Math.random(), 255 * Math.random(), 1)
         let rotation_angle = 360 / num_sides;
         for (let i = 0; i < num_sides; i++) {
-            this.shapes.pane.draw(context, program_state, model_transform.times(Mat4.scale(5, 10, 5)), this.materials.plastic.override({color:blue}));
-            model_transform = model_transform.times(Mat4.translation(5, 0, 0));
+            for(let j = 0; j < panes_per_side; j++) {
+                if (row[i*panes_per_side + j]) {
+                    this.shapes.pane.draw(context, program_state, model_transform.times(Mat4.scale(1, 10, 5)), this.materials.plastic.override({color:color(0.5, 0.5, 0.1, 1)}));
+                }
+                model_transform = model_transform.times(Mat4.translation(1, 0, 0));
+                
+            }
             model_transform = model_transform.times(Mat4.rotation(rotation_angle * Math.PI / 180, 0, 0, 1));
-            model_transform = model_transform.times(Mat4.translation(5, 0, 0));
+            model_transform = model_transform.times(Mat4.translation(1, 0, 0));
         }
     }
 
     display(context, program_state) {
         super.display(context, program_state);
         let model_transform = Mat4.identity();
-
-        this.generateFaces(6, context, program_state, model_transform)
+        for (let i = 0; i < this.levels.length; i++) {
+            this.generateFaces(6, 2, context, program_state, model_transform, color(0.9, 0.3, .2, 1), this.levels[i]);
+            model_transform = model_transform.times(Mat4.translation(0, 0, -10));
+        }
     }
 }
