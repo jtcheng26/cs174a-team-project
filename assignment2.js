@@ -39,6 +39,19 @@ class Cube_Single_Strip extends Shape {
     }
 }
 
+class Pane extends Shape {
+    constructor() {
+        super("position", "normal",);
+        this.arrays.position = Vector3.cast(
+            [-1, -1, -1], [1, -1, -1], [-1, -1, 1], [1, -1, 1]
+        );
+        this.arrays.normal = Vector3.cast(
+            [0, -1, 0], [0, -1, 0], [0, -1, 0], [0, -1, 0]
+        );
+        this.indices.push(0, 1, 2, 1, 2, 3);
+    }
+}
+
 
 class Base_Scene extends Scene {
     /**
@@ -53,6 +66,7 @@ class Base_Scene extends Scene {
         this.shapes = {
             'cube': new Cube(),
             'outline': new Cube_Outline(),
+            'pane': new Pane(),
         };
 
         // *** Materials
@@ -122,7 +136,8 @@ export class Assignment2 extends Base_Scene {
         let model_transform = Mat4.identity();
 
         // Example for drawing a cube, you can remove this line if needed
-        this.shapes.cube.draw(context, program_state, model_transform, this.materials.plastic.override({color:blue}));
+        // model_transform = model_transform.times(Mat4.scale(3, 0.05, 5));
+        this.shapes.pane.draw(context, program_state, model_transform, this.materials.plastic.override({color:blue}));
         // TODO:  Draw your entire scene here.  Use this.draw_box( graphics_state, model_transform ) to call your helper.
     }
 }
