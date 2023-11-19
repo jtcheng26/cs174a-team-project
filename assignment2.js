@@ -94,7 +94,7 @@ class Base_Scene extends Scene {
         if (!context.scratchpad.controls) {
             this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
             // Define the global camera and projection matrices, which are stored in program_state.
-            program_state.set_camera(Mat4.translation(5, -10, -30));
+            program_state.set_camera(Mat4.translation(-0.5,-1.5,0));
         }
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, 1, 100);
@@ -157,7 +157,9 @@ export class Assignment2 extends Base_Scene {
     display(context, program_state) {
         super.display(context, program_state);
         let model_transform = Mat4.identity();
-        for (let i = 0; i < this.levels.length; i++) {
+        let t = program_state.animation_time / 1000
+        model_transform = model_transform.times(Mat4.translation(0, 0, t * 12))
+        for (let i = 0; i<this.levels.length; i++) {
             this.generateFaces(6, 2, context, program_state, model_transform, color(0.9, 0.3, .2, 1), this.levels[i]);
             model_transform = model_transform.times(Mat4.translation(0, 0, -10));
         }
