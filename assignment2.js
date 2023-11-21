@@ -67,6 +67,7 @@ class Base_Scene extends Scene {
             'cube': new Cube(),
             'outline': new Cube_Outline(),
             'pane': new Pane(),
+            'sphere': new defs.Subdivision_Sphere(4)
         };
 
         // *** Materials
@@ -84,6 +85,31 @@ class Base_Scene extends Scene {
             }
             this.levels.push(temp);
         }
+
+        this.sphere_transform = Mat4.identity()
+                                .times(Mat4.translation(0.5,0.5,-4)
+                                .times(Mat4.scale(0.2,0.2,0.2)));
+        
+        //limit is 25 for shift of 0.2
+        //inversely proportional; y = k / x
+        this.mili_t = 0;
+        this.mark_begin = 0;
+        this.mark_end = 0;
+
+        this.key_shift = 3.0;
+        this.gradient_x = 30;
+        this.delta_x = (this.key_shift / this.gradient_x);
+
+        this.left_pressed = false;
+        this.right_pressed = false;
+        
+
+        this.bounds = 0;
+
+
+
+    
+
     }
 
     display(context, program_state) {
@@ -94,7 +120,7 @@ class Base_Scene extends Scene {
         if (!context.scratchpad.controls) {
             this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
             // Define the global camera and projection matrices, which are stored in program_state.
-            program_state.set_camera(Mat4.translation(-0.5,-1.5,0));
+            program_state.set_camera(Mat4.translation(-.5,-1.5,0));
         }
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, 1, 100);
@@ -128,14 +154,72 @@ export class Assignment2 extends Base_Scene {
         this.key_triggered_button("Sit still", ["m"], () => {
             // TODO:  Requirement 3d:  Set a flag here that will toggle your swaying motion on and off.
         });
+
+        this.key_triggered_button("Move Left", ["j"], () => {
+            if (this.left_pressed){
+                return;
+            }
+
+            this.bounds--;
+            if (this.bounds > -13){
+                this.left_pressed = true;
+
+                this.mark_begin = this.mili_t;
+                this.mark_end = this.mark_begin + this.gradient_x;
+
+            } else {
+                this.bounds = -13;
+            }
+        
+        });
+
+        this.key_triggered_button("Move Right", ["l"], () => {
+            if (this.right_pressed){
+                return;
+            }
+
+            this.bounds++;
+            if (this.bounds < 13){
+                this.right_pressed = true;
+
+                this.mark_begin = this.mili_t;
+                this.mark_end = this.mark_begin + this.gradient_x;
+
+            } else {
+                console.log("Cant Move")
+                this.bounds = 13;
+            }
+        });
     }
 
-    draw_box(context, program_state, model_transform) {
-        // TODO:  Helper function for requirement 3 (see hint).
-        //        This should make changes to the model_transform matrix, draw the next box, and return the newest model_transform.
-        // Hint:  You can add more parameters for this function, like the desired color, index of the box, etc.
+    draw_ball(context, program_state) {
 
-        return model_transform;
+        if (this.left_pressed){
+            if (this.mili_t < this.mark_end){
+                this.sphere_transform = this.sphere_transform.times(Mat4.translation(-1 * this.delta_x , 0 , 0));                
+            } else {
+                this.left_pressed = false; 
+            }
+        }
+
+        if (this.right_pressed){
+            if (this.mili_t < this.mark_end){
+                this.sphere_transform = this.sphere_transform.times(Mat4.translation(this.delta_x , 0 , 0));                
+            } else {
+                this.right_pressed = false; 
+            }
+        }
+
+        console.log(this.bounds);
+
+        
+
+
+
+
+        
+    
+        this.shapes.sphere.draw(context, program_state, this.sphere_transform, this.materials.plastic.override({color: color(1,1,1,1)}));
     }
 
     generateFaces(num_sides, panes_per_side, context, program_state, model_transform, ring_color, row) {
@@ -154,14 +238,21 @@ export class Assignment2 extends Base_Scene {
         }
     }
 
+
+
     display(context, program_state) {
         super.display(context, program_state);
         let model_transform = Mat4.identity();
-        let t = program_state.animation_time / 1000
+        this.mili_t = program_state.animation_time;
+        let t = program_state.animation_time / 1000;
+
         model_transform = model_transform.times(Mat4.translation(0, 0, t * 12))
         for (let i = 0; i<this.levels.length; i++) {
             this.generateFaces(6, 2, context, program_state, model_transform, color(0.9, 0.3, .2, 1), this.levels[i]);
             model_transform = model_transform.times(Mat4.translation(0, 0, -10));
         }
+
+        this.draw_ball(context, program_state);
+
     }
 }
