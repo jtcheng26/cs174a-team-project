@@ -90,26 +90,31 @@ class Base_Scene extends Scene {
                                 .times(Mat4.translation(0.5,0.5,-4)
                                 .times(Mat4.scale(0.2,0.2,0.2)));
         
-        //limit is 25 for shift of 0.2
-        //inversely proportional; y = k / x
+       //Need globally stored program time for smooth ball transitions
         this.mili_t = 0;
         this.mark_begin = 0;
         this.mark_end = 0;
 
-        this.key_shift = 3.0;
-        this.gradient_x = 30;
+        
+        this.key_shift = 3.0; // How much distance the ball should move on each keypress
+        this.gradient_x = 30; //How fast the ball should move in its change of direction. Higher number is slower.
         this.delta_x = (this.key_shift / this.gradient_x);
 
         this.left_pressed = false;
         this.right_pressed = false;
         
 
-        this.bounds = 0;
+        this.bounds = 0; //Simple range from -13 to 13 for ball movement. Note: needs to be set by inspection.
 
+        //JUMP MOTION
+        this.is_jumping = false;
+        this.jump_begin = 0;
+        this.jump_end = 0;
 
-
-    
-
+        this.jump_height = 3.0;
+        this.gravity = 1000;
+        
+        this.jump_origin = Mat4.identity();
     }
 
     display(context, program_state) {
@@ -151,14 +156,21 @@ export class Assignment2 extends Base_Scene {
         this.key_triggered_button("Outline", ["o"], () => {
             // TODO:  Requirement 5b:  Set a flag here that will toggle your outline on and off
         });
-        this.key_triggered_button("Sit still", ["m"], () => {
+        this.key_triggered_button("Jump", ["k"], () => {
             // TODO:  Requirement 3d:  Set a flag here that will toggle your swaying motion on and off.
+            if (this.is_jumping){
+                return;
+            } else {
+                this.jump_begin = this.mili_t;
+                this.jump_end = this.jump_begin + this.gravity;
+                this.is_jumping = true;
+                this.jump_origin = this.sphere_transform;
+            }
+
         });
 
         this.key_triggered_button("Move Left", ["j"], () => {
-            if (this.left_pressed){
-                return;
-            }
+            
 
             this.bounds--;
             if (this.bounds > -13){
@@ -186,13 +198,30 @@ export class Assignment2 extends Base_Scene {
                 this.mark_end = this.mark_begin + this.gradient_x;
 
             } else {
-                console.log("Cant Move")
                 this.bounds = 13;
             }
         });
     }
 
     draw_ball(context, program_state) {
+
+        if (this.is_jumping){
+            if (this.mili_t < this.jump_end){
+                let vertex = this.gravity / 2;
+                let projectile_time = this.mili_t - this.jump_begin;
+                let a = ((-1 * this.jump_height) / (vertex ** 2));
+                let y = a * ((projectile_time - vertex) ** 2) + this.jump_height;
+                console.log(y);
+
+                this.sphere_transform = this.jump_origin.times(Mat4.translation(0, y, 0));
+
+            } else {
+                console.log("Jump ended")
+                this.jump_origin = Mat4.identity();
+                this.is_jumping = false;
+            }
+
+        }
 
         if (this.left_pressed){
             if (this.mili_t < this.mark_end){
@@ -210,15 +239,6 @@ export class Assignment2 extends Base_Scene {
             }
         }
 
-        console.log(this.bounds);
-
-        
-
-
-
-
-        
-    
         this.shapes.sphere.draw(context, program_state, this.sphere_transform, this.materials.plastic.override({color: color(1,1,1,1)}));
     }
 
