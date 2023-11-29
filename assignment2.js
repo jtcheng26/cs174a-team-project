@@ -166,14 +166,16 @@ class Base_Scene extends Scene {
       cube: new Cube(),
       outline: new Cube_Outline(),
       pane: new Pane(),
-      sphere: new defs.Subdivision_Sphere(4),
-    };
+    //   sphere: new defs.Tetrahedron(15, 15),
+      sphere: new defs.Subdivision_Sphere(2),
+};
 
     // *** Materials
     this.materials = {
       plastic: new Material(new defs.Phong_Shader(), {
-        ambient: 0.4,
-        diffusivity: 0.6,
+        ambient: 0,
+        diffusivity: 0.8,
+        specularity: 0,
         color: hex_color("#ffffff"),
       }),
     };
@@ -213,7 +215,7 @@ class Base_Scene extends Scene {
     this.jump_end = 0;
 
     this.jump_height = 3.0;
-    this.gravity = 1000;
+    this.gravity = 1200;
 
     this.jump_origin = Mat4.identity();
   }
@@ -239,8 +241,10 @@ class Base_Scene extends Scene {
     );
 
     // *** Lights: *** Values of vector or point lights.
-    const light_position = vec4(0, 5, 5, 1);
-    program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
+    this.light_position = vec4(-0.1, -0.4, 1.2, -0.15);
+    // this.light_position = vec4(-0.1, -0.4, 1.2, Math.sin(program_state.animation_time/1000));
+    // console.log(Math.sin(program_state.animation_time / 1000))
+    program_state.lights = [new Light(this.light_position, color(1,1,1,1), 9999)];
   }
 
   rotation(side) {
@@ -299,6 +303,7 @@ export class Assignment2 extends Base_Scene {
                 this.jump_end = this.jump_begin + this.gravity;
                 this.is_jumping = true;
                 this.jump_origin = this.sphere_transform;
+                this.camera_origin = this.camera_location
             }
 
         });
@@ -325,43 +330,30 @@ export class Assignment2 extends Base_Scene {
         let y = a * (projectile_time - vertex) ** 2 + this.jump_height;
         // console.log(y);
 
-                this.sphere_transform = this.jump_origin.times(Mat4.translation(0, y, 0));
+        this.sphere_transform = this.jump_origin.times(Mat4.translation(0, y, 0));
+        this.camera_location = this.camera_origin.times(Mat4.inverse(Mat4.translation(0, y*0.2, 0)));
+    } else {
+        console.log("Jump ended")
+        this.jump_origin = Mat4.identity();
+        this.is_jumping = false;
+        this.camera_location = this.camera_origin
+    }
 
-            } else {
-                console.log("Jump ended")
-                this.jump_origin = Mat4.identity();
-                this.is_jumping = false;
-            }
-
-        }
-
-
-
-        // if(!this.is_jumping) {
-        //     if (this.left_pressed) {
-        //         this.sphere_transform = this.sphere_transform.times(Mat4.translation(-this.delta_x , 0 , 0));  
-        //         // this.rel_x -= this.delta_x
-        //     }
-        //     if (this.right_pressed) {
-        //         this.sphere_transform = this.sphere_transform.times(Mat4.translation(this.delta_x , 0 , 0));    
-        //         // this.rel_x += this.delta_x
-        //     }
-        // } else {
-            if (this.left_pressed) {
-                this.sphere_transform = this.sphere_transform.times(Mat4.translation(-this.delta_x , 0 , 0));  
-                this.jump_origin = this.jump_origin.times(Mat4.translation(-this.delta_x , 0 , 0));
-            }
-            if (this.right_pressed) {
-                this.sphere_transform = this.sphere_transform.times(Mat4.translation(this.delta_x , 0 , 0));    
-                this.jump_origin = this.jump_origin.times(Mat4.translation(this.delta_x , 0 , 0));
-            }
-        // }
-
+    }
+    if (this.left_pressed) {
+        this.sphere_transform = this.sphere_transform.times(Mat4.translation(-this.delta_x , 0 , 0));  
+        this.jump_origin = this.jump_origin.times(Mat4.translation(-this.delta_x , 0 , 0));
+    }
+    if (this.right_pressed) {
+        this.sphere_transform = this.sphere_transform.times(Mat4.translation(this.delta_x , 0 , 0));    
+        this.jump_origin = this.jump_origin.times(Mat4.translation(this.delta_x , 0 , 0));
+    }
+    let rotating_sphere = this.sphere_transform.times(Mat4.rotation(-program_state.animation_time / 120, 1, 0, 0))
     this.shapes.sphere.draw(
       context,
       program_state,
-      this.sphere_transform,
-      this.materials.plastic.override({ color: color(1, 1, 1, 1) })
+      rotating_sphere,
+      this.materials.plastic.override({ color: color(1, 1, 1, 1), ambient: 0.2 })
     );
   }
 
