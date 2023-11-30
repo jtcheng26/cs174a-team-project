@@ -177,6 +177,7 @@ class Base_Scene extends Scene {
       pane: new Pane(),
       // sphere: new defs.Axis_Arrows(),
       sphere: new defs.Subdivision_Sphere(4),
+      star: new defs.Subdivision_Sphere(1),
 };
 
     // *** Materials
@@ -232,6 +233,19 @@ class Base_Scene extends Scene {
     //ROTATION
     this.side = 5
     this.rotation_side = 0;
+
+    //STARS
+    this.stars_deque = [];
+    for (let i = 0; i < 1000; i++) {
+      let star_trans = [(Math.random() * 20 + 5) * (Math.random() >= 0.5 ? 1 : -1), (Math.random() * 30 - 15) * (Math.random() >= 0.5 ? 1 : 1), -5 * (i % 10)];
+      star_trans.push(Math.random() * 0.2);
+      this.stars_deque.push(star_trans);
+    }
+    for (let i = 0; i < 250; i++) {
+      let star_trans = [Math.random() * 10 - 5, (Math.random() * 5 + 6) * (Math.random() >= 0.5 ? 1 : -1), -5 * ((i) % 10)];
+      star_trans.push(Math.random() * 0.2);
+      this.stars_deque.push(star_trans);
+    }
   }
 
   display(context, program_state) {
@@ -475,6 +489,21 @@ export class Assignment2 extends Base_Scene {
     );
   }
 
+  drawStars(context, program_state) {
+    let sphere_pos = this.sphere_transform.times(vec4(0, 0, 0, 1));
+    for (let i = 0; i < this.stars_deque.length; i++) {
+      this.shapes.star.draw(
+        context,
+        program_state,
+        Mat4.identity().times(Mat4.translation(this.stars_deque[i][0], this.stars_deque[i][1], this.stars_deque[i][2])).times(Mat4.scale(this.stars_deque[i][3], this.stars_deque[i][3], this.stars_deque[i][3])),
+        this.materials.plastic.override({
+          color: color(1, 1, 1, 1),
+          ambient: 1,
+        })
+      )
+    }
+  }
+
   generateFaces(
     num_sides,
     panes_per_side,
@@ -535,8 +564,8 @@ export class Assignment2 extends Base_Scene {
     let rows_behind_camera = 0;
     let new_initial_transform = model_transform;
     let next_model_transform = -1;
-    model_transform = model_transform
-
+    model_transform = model_transform;
+    this.drawStars(context, program_state);
     for (let row of rows) {
       this.generateFaces(
         6,
