@@ -238,12 +238,12 @@ class Base_Scene extends Scene {
     this.stars_deque = [];
     for (let i = 0; i < 1000; i++) {
       let star_trans = [(Math.random() * 20 + 5) * (Math.random() >= 0.5 ? 1 : -1), (Math.random() * 30 - 15) * (Math.random() >= 0.5 ? 1 : 1), -5 * (i % 10)];
-      star_trans.push(Math.random() * 0.2);
+      star_trans.push(Math.random() * 0.1);
       this.stars_deque.push(star_trans);
     }
     for (let i = 0; i < 250; i++) {
       let star_trans = [Math.random() * 10 - 5, (Math.random() * 5 + 6) * (Math.random() >= 0.5 ? 1 : -1), -5 * ((i) % 10)];
-      star_trans.push(Math.random() * 0.2);
+      star_trans.push(Math.random() * 0.1);
       this.stars_deque.push(star_trans);
     }
   }
