@@ -550,11 +550,12 @@ export class Assignment2 extends Base_Scene {
     this.mili_t = program_state.animation_time;
     let t = program_state.animation_time / 1000;
     let model_transform = this.manager.get_initial_transform();
+    let game_speed = t / 10;
     if (model_transform == -1) {
-      model_transform = Mat4.identity().times(Mat4.translation(0, 0, t * 12));
+      model_transform = Mat4.identity().times(Mat4.translation(0, 0, t * game_speed));
     } else {
       model_transform = model_transform.times(
-        Mat4.translation(0, 0, (t - this.prev_t) * 12)
+        Mat4.translation(0, 0, (t - this.prev_t) * game_speed)
       );
     }
     // model_transform = model_transform.times(this.sphere_transform)
