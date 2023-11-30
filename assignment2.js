@@ -175,7 +175,7 @@ class Base_Scene extends Scene {
       outline: new Cube_Outline(),
       pane: new Pane(),
       // sphere: new defs.Axis_Arrows(),
-      sphere: new defs.Subdivisijkon_Sphere(2),
+      sphere: new defs.Subdivision_Sphere(2),
 };
 
     // *** Materials
