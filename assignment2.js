@@ -174,9 +174,9 @@ class Base_Scene extends Scene {
       cube: new Cube(),
       outline: new Cube_Outline(),
       pane: new Pane(),
-      //   sphere: new defs.Tetrahedron(15, 15),
-      sphere: new defs.Subdivision_Sphere(2),
-    };
+      // sphere: new defs.Axis_Arrows(),
+      sphere: new defs.Subdivisijkon_Sphere(2),
+};
 
     // *** Materials
     this.materials = {
@@ -208,7 +208,7 @@ class Base_Scene extends Scene {
     this.mark_end = 0;
 
     this.key_shift = 10.0; // How much distance the ball should move on each keypress
-    this.gradient_x = 100; //How fast the ball should move in its change of direction. Higher number is slower.
+    this.gradient_x = 50; //How fast the ball should move in its change of direction. Higher number is slower.
     this.delta_x = this.key_shift / this.gradient_x;
     this.rel_x = 0;
 
@@ -229,6 +229,7 @@ class Base_Scene extends Scene {
 
     //ROTATION
     this.side = 5
+    this.rotation_side = 0;
   }
 
   display(context, program_state) {
@@ -241,8 +242,11 @@ class Base_Scene extends Scene {
         (context.scratchpad.controls = new defs.Movement_Controls())
       );
       // Define the global camera and projection matrices, which are stored in program_state.
-      this.camera_location = this.rotation(this.side)
-      program_state.set_camera(this.camera_location);
+      // this.camera_location = this.rotation(this.side)
+      this.camera_location = this.rotation(this.rotation_side); 
+      this.camera_origin = this.camera_location
+      // program_state.set_camera(this.camera_location);
+      program_state.camera_inverse = this.camera_location.map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, 0.1));
     }
     program_state.projection_transform = Mat4.perspective(
       Math.PI / 4,
@@ -260,14 +264,17 @@ class Base_Scene extends Scene {
     ];
   }
 
-  set_camera_rotation(side) {
-    
-  }
-
   rotation(side) {
     const center_translation = Mat4.translation(0.5, 1.5 * Math.sqrt(3), 0);
     const rotated = Mat4.rotation(side * (Math.PI / 3), 0, 0, 1);
-    const camera_location = Mat4.translation(-0.5, -1.5, 0)
+    const camera_location = Mat4.translation(-0.5, -1.5, 0);
+    // const sphere_ct = Mat4.translation(0.5, 0.2, -6, 0)
+    // this.sphere_transform = this.sphere_transform.times(sphere_ct.times(Mat4.inverse(rotated)).times(Mat4.inverse(sphere_ct)))
+    // console.log(this.sphere_transform)
+    // console.log(Mat4.inverse(rotated))
+    // this.sphere_transform = this.sphere_transform.times(Mat4.rotation(-side * (Math.PI / 3), 0, 0, 1))
+    // console.log(this.sphere_transform)
+
 
     return camera_location.times(center_translation.times(rotated).times(Mat4.inverse(center_translation)))
   }
@@ -324,7 +331,7 @@ export class Assignment2 extends Base_Scene {
       ["j"],
       () => {
         this.left_pressed = true;
-        console.log(this.sphere_transform);
+        // console.log(this.sphere_transform);
       },
       undefined,
       () => (this.left_pressed = false)
@@ -333,49 +340,124 @@ export class Assignment2 extends Base_Scene {
     this.key_triggered_button(
       "Move Right",
       ["l"],
-      () => (this.right_pressed = true),
+      () => {this.right_pressed = true},
       undefined,
       () => (this.right_pressed = false)
     );
   }
 
+  panel_perspective_switch(method, jumping, ball_vcs, boundary) {
+    if(method == "left") {
+      if(ball_vcs[1] <= boundary) {
+        this.is_jumping = false;
+        this.rotation_side = (this.rotation_side + 1);
+        if(this.rotation_side > 5) {
+          this.rotation_side = 0
+        }
+        this.camera_location = this.rotation(this.rotation_side);
+        console.log("left panel")
+      }
+    } else if (method == "right") {
+      if(ball_vcs[1] <= boundary) {
+        this.is_jumping = false;
+        this.rotation_side = (this.rotation_side - 1);
+        if(this.rotation_side < 0) {
+          this.rotation_side = 5
+        }
+        this.camera_location = this.rotation(this.rotation_side);
+        console.log("right panel")
+      } 
+    }
+  }
+
   draw_ball(context, program_state) {
     if (this.is_jumping) {
-      if (this.mili_t < this.jump_end) {
-        let vertex = this.gravity / 2;
-        let projectile_time = this.mili_t - this.jump_begin;
-        let a = (-1 * this.jump_height) / vertex ** 2;
-        let y = a * (projectile_time - vertex) ** 2 + this.jump_height;
-        // console.log(y);
+        if (this.mili_t < this.jump_end) {
+            let vertex = this.gravity / 2;
+            let projectile_time = this.mili_t - this.jump_begin;
+            let a = (-1 * this.jump_height) / vertex ** 2;
+            let y = a * (projectile_time - vertex) ** 2 + this.jump_height;
+            // console.log(y);
 
-        this.sphere_transform = this.jump_origin.times(
-          Mat4.translation(0, y, 0)
-        );
-        this.camera_location = this.camera_origin.times(
-          Mat4.inverse(Mat4.translation(0, y * 0.2, 0))
-        );
-      } else {
-        console.log("Jump ended");
-        this.jump_origin = Mat4.identity();
-        this.is_jumping = false;
-        this.camera_location = this.camera_origin;
+            this.sphere_transform = this.jump_origin.times(Mat4.translation(0, y, 0));
+            // this.camera_location = this.camera_origin.times(Mat4.inverse(Mat4.translation(0, y*0.2, 0)));
+            let pos_sphere = this.sphere_transform.times(vec4(0,0,0,1));
+            let eye_ball_coords = this.camera_location.times(pos_sphere)
+            let hex_x_const_right = (eye_ball_coords[0] - 1.3) * Math.sqrt(3) -1.3
+            let hex_x_const_left = (-1.3 - eye_ball_coords[0]) * Math.sqrt(3) -1.3
+
+            if(eye_ball_coords[1] <= hex_x_const_right) {
+                this.is_jumping = false;
+                this.rotation_side = (this.rotation_side - 1);
+                if(this.rotation_side < 0) {
+                  this.rotation_side = 5
+                }
+                this.camera_location = this.rotation(this.rotation_side);
+                this.sphere_transform = this.sphere_transform.times(Mat4.rotation((Math.PI / 3), 0, 0, 1))
+                console.log("right panel")
+            } 
+            else if(eye_ball_coords[1] <= hex_x_const_left) {
+                this.is_jumping = false;
+                this.rotation_side = (this.rotation_side + 1);
+                if(this.rotation_side > 5) {
+                  this.rotation_side = 0
+                }
+                this.camera_location = this.rotation(this.rotation_side);
+                this.sphere_transform = this.sphere_transform.times(Mat4.rotation(-(Math.PI / 3), 0, 0, 1))
+
+                console.log("left panel")
+            }
+            // this.panel_perspective_switch("left", eye_ball_coords, hex_x_const_left)
+            // this.panel_perspective_switch("right", eye_ball_coords, hex_x_const_right)
+        } else {
+            console.log("Jump ended")
+            // this.jump_origin = Mat4.identity();
+            this.is_jumping = false;
+            // this.camera_location = this.camera_origin
+        }
+    }
+
+
+    
+
+    let pos_sphere = this.sphere_transform.times(vec4(0,0,0,1));
+    // console.log(pos_sphere[0], pos_sphere[1], pos_sphere[2])
+    let cam_inv = Mat4.inverse(this.camera_location)
+    let eye_ball_coords = this.camera_location.times(pos_sphere)
+    let hex_y_const = (eye_ball_coords[1] +1.3) / Math.sqrt(3)
+    let hex_x_const_right = (eye_ball_coords[0] - 1.3) * Math.sqrt(3) -1.2
+    let hex_x_const_left = (-1.3 - eye_ball_coords[0]) * Math.sqrt(3) -1.2
+    // console.log(pos_sphere)
+    // console.log(this.sphere_transform)
+    // console.log(this.camera_location.times(vec4(0,0,0,1)))
+    // console.log(this.camera_origin.times(vec4(0,0,0,1)))
+    // console.log(pos_sphere[1])
+
+    if (this.left_pressed && eye_ball_coords[0] >= -1.3 - hex_y_const) {
+      if(eye_ball_coords[1] <= hex_x_const_left && !this.is_jumping) {
+        this.rotation_side = (this.rotation_side + 1);
+        if(this.rotation_side > 5) {
+          this.rotation_side = 0
+        }
+        this.camera_location = this.rotation(this.rotation_side);
+        this.sphere_transform = this.sphere_transform.times(Mat4.rotation(-(Math.PI / 3), 0, 0, 1))
+        console.log("left panel")
       }
+      this.sphere_transform = this.sphere_transform.times(Mat4.translation(-this.delta_x , 0 , 0));  
+      this.jump_origin = this.jump_origin.times(Mat4.translation(-this.delta_x , 0 , 0));
     }
-    if (this.left_pressed) {
-      this.sphere_transform = this.sphere_transform.times(
-        Mat4.translation(-this.delta_x, 0, 0)
-      );
-      this.jump_origin = this.jump_origin.times(
-        Mat4.translation(-this.delta_x, 0, 0)
-      );
-    }
-    if (this.right_pressed) {
-      this.sphere_transform = this.sphere_transform.times(
-        Mat4.translation(this.delta_x, 0, 0)
-      );
-      this.jump_origin = this.jump_origin.times(
-        Mat4.translation(this.delta_x, 0, 0)
-      );
+    if (this.right_pressed && eye_ball_coords[0] <= 1.3 + hex_y_const) {
+      if(eye_ball_coords[1] <= hex_x_const_right && !this.is_jumping) {
+        this.rotation_side = (this.rotation_side - 1);
+        if(this.rotation_side < 0) {
+          this.rotation_side = 5
+        }
+        this.camera_location = this.rotation(this.rotation_side);
+        this.sphere_transform = this.sphere_transform.times(Mat4.rotation((Math.PI / 3), 0, 0, 1))
+        console.log("right panel")
+      }
+      this.sphere_transform = this.sphere_transform.times(Mat4.translation(this.delta_x , 0 , 0));    
+      this.jump_origin = this.jump_origin.times(Mat4.translation(this.delta_x , 0 , 0));
     }
     let rotating_sphere = this.sphere_transform.times(
       Mat4.rotation(-program_state.animation_time / 120, 1, 0, 0)
@@ -410,14 +492,14 @@ export class Assignment2 extends Base_Scene {
     for (let i = 0; i < num_sides; i++) {
       for (let j = 0; j < panes_per_side; j++) {
         if (row[i * panes_per_side + j]) {
-          // if (row[i * panes_per_side + j]) {
           this.shapes.pane.draw(
             context,
             program_state,
             model_transform
               .times(Mat4.scale(1, 10, 5))
               .times(Mat4.rotation(Math.PI / 2, 1, 0, 0)),
-            this.materials.plastic.override({ color: ring_color })
+            // this.materials.plastic.override({ color: color(0.1*(i+1),0.1*(i+1),0.1*(i+1),1) })
+              this.materials.plastic.override({ color:ring_color })
           );
         }
         model_transform = model_transform.times(Mat4.translation(1, 0, 0));
@@ -431,7 +513,9 @@ export class Assignment2 extends Base_Scene {
 
   display(context, program_state) {
     super.display(context, program_state);
-    program_state.set_camera(this.camera_location);
+    // program_state.set_camera(this.camera_location);
+    program_state.camera_inverse = this.camera_location.map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, 0.1));
+
     this.mili_t = program_state.animation_time;
     let t = program_state.animation_time / 1000;
     let model_transform = this.manager.get_initial_transform();
