@@ -16,6 +16,7 @@ const {
   Shape,
   Material,
   Scene,
+  Texture
 } = tiny;
 
 class Cube extends Shape {
@@ -175,16 +176,17 @@ class Base_Scene extends Scene {
       outline: new Cube_Outline(),
       pane: new Pane(),
       // sphere: new defs.Axis_Arrows(),
-      sphere: new defs.Subdivision_Sphere(2),
+      sphere: new defs.Subdivision_Sphere(4),
 };
 
     // *** Materials
     this.materials = {
-      plastic: new Material(new defs.Phong_Shader(), {
+      plastic: new Material(new defs.Textured_Phong(), {
         ambient: 0.2,
         diffusivity: 0.7,
         specularity: 0,
         color: hex_color("#ffffff"),
+        texture: new Texture("assets/grid.png", "LINEAR_MIPMAP_LINEAR")
       }),
     };
     // The white material and basic shader are used for drawing the outline.
@@ -542,7 +544,7 @@ export class Assignment2 extends Base_Scene {
         context,
         program_state,
         model_transform,
-        color(0.5, 0.95, 0.5, 1),
+        color(0.1, 0.7, 0.5, 1),
         row
       );
       next_model_transform = model_transform.times(Mat4.translation(0, 0, -10));
