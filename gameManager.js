@@ -16,7 +16,7 @@ export class GameManager {
     // only for first level
 
     /* Constants */
-    this.rows_to_render = 12;
+    this.rows_to_render = 23;
 
     /* Update during game */
     this.rows_deque = [];
@@ -82,7 +82,7 @@ export class GameManager {
     // }
 
     // if (!at_end) this.rows_deque.push(this.levels[this.right_level][this.right_row])
-    this.rows_deque.push(this.generate_new_row(12));
+    this.rows_deque.push(this.generate_new_row(18));
     this.rows_deque.shift();
   }
 
@@ -112,18 +112,18 @@ export function stringToMatrix(s) {
 
 function testGameManager() {
   const levels = [
-    `101110101110
-     111010111010
-     010111010111
-     011100011100`,
-    `101110101110
-     111010111010
-     010111010111
-     011100011100`,
-    `101110101110
-     111010111010
-     010111010111
-     011100011100`,
+    `101110101110111111
+     111010111010111111
+     010111010111111111
+     011100011100111111`,
+    `101110101110111111
+     111010111010111111
+     010111010111111111
+     011100011100111111`,
+    `101110101110111111
+     111010111010111111
+     010111010111111111
+     011100011100111111`,
   ];
   const game = new GameManager(levels.map((l) => stringToMatrix(l)));
   //   console.log(game.levels);

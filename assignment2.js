@@ -281,9 +281,9 @@ class Base_Scene extends Scene {
   }
 
   rotation(side) {
-    const center_translation = Mat4.translation(0.5, 1.5 * Math.sqrt(3), 0);
+    const center_translation = Mat4.translation(1, 1.5*Math.sqrt(3), 0);
     const rotated = Mat4.rotation(side * (Math.PI / 3), 0, 0, 1);
-    const camera_location = Mat4.translation(-0.5, -1.5, 0);
+    const camera_location = Mat4.translation(-1, -1.5, 0);
     // const sphere_ct = Mat4.translation(0.5, 0.2, -6, 0)
     // this.sphere_transform = this.sphere_transform.times(sphere_ct.times(Mat4.inverse(rotated)).times(Mat4.inverse(sphere_ct)))
     // console.log(this.sphere_transform)
@@ -527,18 +527,17 @@ export class Assignment2 extends Base_Scene {
             context,
             program_state,
             model_transform
-              .times(Mat4.scale(1, 10, 5))
-              .times(Mat4.rotation(Math.PI / 2, 1, 0, 0)),
+              .times(Mat4.scale(0.5, 0.5, 2.5))
+              .times(Mat4.rotation(Math.PI/2, 1, 0, 0)),
             // this.materials.plastic.override({ color: color(0.1*(i+1),0.1*(i+1),0.1*(i+1),1) })
               this.materials.plastic.override({ color:ring_color })
           );
         }
         model_transform = model_transform.times(Mat4.translation(1, 0, 0));
       }
-      model_transform = model_transform.times(
-        Mat4.rotation(rotation_angle, 0, 0, 1)
-      );
-      model_transform = model_transform.times(Mat4.translation(1, 0, 0));
+      model_transform = model_transform.times(Mat4.translation(-0.5, 0,0)).times(Mat4.rotation(rotation_angle, 0, 0, 1)).times(Mat4.translation(0.5,0,0))
+
+      // model_transform = model_transform.times(Mat4.translation(1, 0, 0));
     }
   }
 
@@ -550,7 +549,7 @@ export class Assignment2 extends Base_Scene {
     this.mili_t = program_state.animation_time;
     let t = program_state.animation_time / 1000;
     let model_transform = this.manager.get_initial_transform();
-    let game_speed = t / 10;
+    let game_speed = 10;
     if (model_transform == -1) {
       model_transform = Mat4.identity().times(Mat4.translation(0, 0, t * game_speed));
     } else {
@@ -570,14 +569,14 @@ export class Assignment2 extends Base_Scene {
     for (let row of rows) {
       this.generateFaces(
         6,
-        2,
+        3,
         context,
         program_state,
         model_transform,
-        color(0.1, 0.7, 0.5, 1),
+        color(0.1, 0.7, 0.5, 0.5),
         row
       );
-      next_model_transform = model_transform.times(Mat4.translation(0, 0, -10));
+      next_model_transform = model_transform.times(Mat4.translation(0, 0, -5));
       if (model_transform[2][3] >= 10) {
         // console.log(rows_behind_camera)
         rows_behind_camera++;
