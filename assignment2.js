@@ -246,6 +246,9 @@ class Base_Scene extends Scene {
       star_trans.push(Math.random() * 0.1);
       this.stars_deque.push(star_trans);
     }
+
+    this.panel_colors = [color(240 / 255, 77 / 255, 77 / 255, 1), color(250 / 255, 146 / 255, 42 / 255, 1), color(243 / 255, 255 / 255, 79 / 255, 1),
+                        color(0.1, 0.7, 0.5, 1), color(79 / 255, 176 / 255, 255 / 255, 1), color(153 / 255, 94 / 255, 247 / 255, 1), color(244 / 255, 94 / 255, 247 / 255, 1)]
   }
 
   display(context, program_state) {
@@ -549,7 +552,8 @@ export class Assignment2 extends Base_Scene {
     this.mili_t = program_state.animation_time;
     let t = program_state.animation_time / 1000;
     let model_transform = this.manager.get_initial_transform();
-    let game_speed = 5 * (Math.floor(t / 10) + 1);
+    let level = Math.floor(t / 10) + 1;
+    let game_speed = 5 * level;
     if (model_transform == -1) {
       model_transform = Mat4.identity().times(Mat4.translation(0, 0, t * game_speed));
     } else {
@@ -574,7 +578,7 @@ export class Assignment2 extends Base_Scene {
         context,
         program_state,
         model_transform,
-        color(0.1, 0.7, 0.5, 0.5),
+        this.panel_colors[level % this.panel_colors.length],
         row
       );
       next_model_transform = model_transform.times(Mat4.translation(0, 0, -5));
