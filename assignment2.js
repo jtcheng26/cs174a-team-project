@@ -225,8 +225,8 @@ class Base_Scene extends Scene {
     this.jump_begin = 0;
     this.jump_end = 0;
 
-    this.jump_height = 3.0;
-    this.gravity = 1200;
+    this.jump_height = 4.0;
+    this.gravity = 700;
 
     this.jump_origin = Mat4.identity();
 
@@ -549,7 +549,7 @@ export class Assignment2 extends Base_Scene {
     this.mili_t = program_state.animation_time;
     let t = program_state.animation_time / 1000;
     let model_transform = this.manager.get_initial_transform();
-    let game_speed = 10;
+    let game_speed = 5 * (Math.floor(t / 10) + 1);
     if (model_transform == -1) {
       model_transform = Mat4.identity().times(Mat4.translation(0, 0, t * game_speed));
     } else {
@@ -557,6 +557,7 @@ export class Assignment2 extends Base_Scene {
         Mat4.translation(0, 0, (t - this.prev_t) * game_speed)
       );
     }
+    console.log(game_speed);
     // model_transform = model_transform.times(this.sphere_transform)
     const rows = this.manager.get_rows_in_view();
     // console.log(rows);
