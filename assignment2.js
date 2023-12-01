@@ -554,6 +554,8 @@ export class Assignment2 extends Base_Scene {
     let model_transform = this.manager.get_initial_transform();
     let level = Math.floor(t / 10) + 1;
     let game_speed = 5 * level;
+    if (game_speed > 60)
+      game_speed = 60;
     if (model_transform == -1) {
       model_transform = Mat4.identity().times(Mat4.translation(0, 0, t * game_speed));
     } else {
