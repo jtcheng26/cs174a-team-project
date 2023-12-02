@@ -17,6 +17,7 @@ export class GameManager {
 
     /* Constants */
     this.rows_to_render = 30;
+    this.row_size = 18;
 
     /* Update during game */
     this.rows_deque = [];
@@ -69,6 +70,10 @@ export class GameManager {
     return row;
   }
 
+  update_row_size(n) {
+    this.row_size = n
+  }
+
   update_row_window(new_starting_transform) {
     this.starting_transform = new_starting_transform;
     // let at_end = false;
@@ -82,7 +87,7 @@ export class GameManager {
     // }
 
     // if (!at_end) this.rows_deque.push(this.levels[this.right_level][this.right_row])
-    this.rows_deque.push(this.generate_new_row(18));
+    this.rows_deque.push(this.generate_new_row(this.row_size));
     this.rows_deque.shift();
   }
 

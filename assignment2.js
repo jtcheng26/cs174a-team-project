@@ -306,35 +306,25 @@ class Base_Scene extends Scene {
     this.next_rotation = 0;
     this.camera_location = this.rotation(this.rotation_side);
 
+    this.prev_pressed = -1;
+
     program_state.animation_time = 0;
 
-    const levels = [
-      `111111111111111111
-      111111111111111111
-      111111111111111111
-      111111111111111111`,
-      `111111111111111111
-      111111111111111111
-      111111111111111111
-      111111111111111111`,
-      // `111111111111111111
-      // 111111111111111111
-      // 111111111111111111
-      // 111111111111111111`,
-      // `111111111111111111
-      // 111111111111111111
-      // 111111111111111111
-      // 111111111111111111`,
-      // `111111111111111111
-      // 111111111111111111
-      // 111111111111111111
-      // 111111111111111111`,
-      // `111111111111111111
-      // 111111111111111111
-      // 111111111111111111
-      // 111111111111111111`,
-    ];
-    const game = new GameManager(levels.map((l) => stringToMatrix(l)));
+    const levels = [];
+    for (let i = 0; i < 1; i++) {
+      let level = [];
+      for (let k = 0; k < 20; k++) {
+        let row = [];
+        for (let j = 0; j < NUM_SIDES * PANES_PER_SIDE; j++) {
+          if (k < 6) row.push(1)
+          else row.push(Math.random() < 0.5);
+        }
+        level.push(row);
+      }
+      levels.push(level);
+    }
+    const game = new GameManager(levels);
+    game.update_row_size(this.PANES_PER_SIDE * this.NUM_SIDES);
     this.manager = game;
     this.prev_t = -1;
   }
@@ -376,8 +366,7 @@ class Base_Scene extends Scene {
 
   rotation(side) {
     // const center_translation = Mat4.translation(0, 0, 0);
-    const NUM_SIDES = 6;
-    const rotated = Mat4.rotation((side * 2 * Math.PI) / NUM_SIDES, 0, 0, 1);
+    const rotated = Mat4.rotation(side * this.ROTATION_ANGLE, 0, 0, 1);
     // const camera_location = Mat4.translation(-1, -1.5, 0);
     // const sphere_ct = Mat4.translation(0.5, 0.2, -6, 0)
     // this.sphere_transform = this.sphere_transform.times(sphere_ct.times(Mat4.inverse(rotated)).times(Mat4.inverse(sphere_ct)))
@@ -425,6 +414,7 @@ export class Assignment2 extends Base_Scene {
       ["j"],
       () => {
         this.left_pressed = true;
+        this.prev_pressed = 0;
         // console.log(this.sphere_transform);
       },
       undefined,
@@ -436,6 +426,7 @@ export class Assignment2 extends Base_Scene {
       ["l"],
       () => {
         this.right_pressed = true;
+        this.prev_pressed = 1;
       },
       undefined,
       () => (this.right_pressed = false)
@@ -650,36 +641,43 @@ export class Assignment2 extends Base_Scene {
     let j = 1;
     left_vector = this.rotation(i).times(vec4(-1, 0, 0, 1));
 
-    let rotating_sphere = this.sphere_transform
-      // .times(
-      //   Mat4.scale(
-      //     1 / this.SPHERE_RADIUS,
-      //     1 / this.SPHERE_RADIUS,
-      //     1 / this.SPHERE_RADIUS
-      //   )
-      // )
-      // .times(
-      //   Mat4.inverse(
-      //     Mat4.identity()
+    let rotating_sphere = this.sphere_transform.times(
+      Mat4.rotation(
+        -program_state.animation_time / 120,
+        right_vector[0],
+        right_vector[1],
+        0
+      )
+    );
+    // .times(
+    //   Mat4.scale(
+    //     1 / this.SPHERE_RADIUS,
+    //     1 / this.SPHERE_RADIUS,
+    //     1 / this.SPHERE_RADIUS
+    //   )
+    // )
+    // .times(
+    //   Mat4.inverse(
+    //     Mat4.identity()
 
-      //       .times(Mat4.translation(-new_pos[0], -new_pos[1], -new_pos[2]))
-      //       .times(
-      //         this.rotation(i).times(
-      //           Mat4.translation(new_pos[0], new_pos[1], new_pos[2])
-      //         )
-      //       )
-      //       .times(
-      //         Mat4.translation(
-      //           j * this.PANE_WIDTH,
-      //           0, //  -j * this.PANE_WIDTH,
-      //           0
-      //         )
-      //       )
-      //   ).times(
-      //     Mat4.scale(this.SPHERE_RADIUS, this.SPHERE_RADIUS, this.SPHERE_RADIUS)
-      //   ) //.times(
-      //   //  Mat4.rotation(-program_state.animation_time / 120, 1, 0, 0)
-      // );
+    //       .times(Mat4.translation(-new_pos[0], -new_pos[1], -new_pos[2]))
+    //       .times(
+    //         this.rotation(i).times(
+    //           Mat4.translation(new_pos[0], new_pos[1], new_pos[2])
+    //         )
+    //       )
+    //       .times(
+    //         Mat4.translation(
+    //           j * this.PANE_WIDTH,
+    //           0, //  -j * this.PANE_WIDTH,
+    //           0
+    //         )
+    //       )
+    //   ).times(
+    //     Mat4.scale(this.SPHERE_RADIUS, this.SPHERE_RADIUS, this.SPHERE_RADIUS)
+    //   ) //.times(
+    //   //  Mat4.rotation(-program_state.animation_time / 120, 1, 0, 0)
+    // );
 
     this.shapes.sphere.draw(
       context,
@@ -927,9 +925,27 @@ export class Assignment2 extends Base_Scene {
           if (intersecting_pane) {
             console.log("intersect", i, j);
             this.intersecting = true;
-            if (i != this.rotation_side) {
-              this.next_rotation = i;
+            // check all right and left rotations
+            if (this.prev_pressed == 1) {
+              for (let k = 1; k < this.NUM_SIDES / 2; k++) {
+                if (i == (this.rotation_side + k) % this.NUM_SIDES)
+                  this.next_rotation = i;
+              }
+            } else if (this.prev_pressed == 0) {
+              for (let k = 1; k < this.NUM_SIDES / 2; k++) {
+                if (
+                  i ==
+                  (this.rotation_side - k + this.NUM_SIDES) % this.NUM_SIDES
+                )
+                  this.next_rotation = i;
+              }
             }
+            // if (i != this.rotation_side) {
+            //   if (this.prev_pressed == 1 && i > this.rotation_side)
+            //     this.next_rotation = i;
+            //   else if (this.prev_pressed == 0 && i < this.rotation_side)
+            //     this.next_rotation = i
+            // }
           }
           // if (i == 0 && j == 1) {
           //   console.log();
@@ -1034,8 +1050,8 @@ export class Assignment2 extends Base_Scene {
     this.intersecting = false;
     for (let row of rows) {
       this.generateFaces(
-        6,
-        3,
+        this.NUM_SIDES,
+        this.PANES_PER_SIDE,
         context,
         program_state,
         model_transform,
