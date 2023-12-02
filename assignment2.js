@@ -205,7 +205,7 @@ class Base_Scene extends Scene {
 
     //STARS
     this.stars_deque = [];
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 500; i++) {
       let star_trans = [
         (Math.random() * 20 + 5) * (Math.random() >= 0.5 ? 1 : -1),
         (Math.random() * 30 - 15) * (Math.random() >= 0.5 ? 1 : 1),
@@ -214,7 +214,7 @@ class Base_Scene extends Scene {
       star_trans.push(Math.random() * 0.1);
       this.stars_deque.push(star_trans);
     }
-    for (let i = 0; i < 250; i++) {
+    for (let i = 0; i < 150; i++) {
       let star_trans = [
         Math.random() * 10 - 5,
         (Math.random() * 5 + 6) * (Math.random() >= 0.5 ? 1 : -1),
@@ -226,7 +226,7 @@ class Base_Scene extends Scene {
 
     this.panel_colors = [
       color(240 / 255, 77 / 255, 77 / 255, 1),
-      color(250 / 255, 146 / 255, 42 / 255, 1),
+      color(250 / 255, 146 / 255, 42 / 255, 0.8),
       color(243 / 255, 255 / 255, 79 / 255, 1),
       color(0.1, 0.7, 0.5, 1),
       color(79 / 255, 176 / 255, 255 / 255, 1),
@@ -242,7 +242,7 @@ class Base_Scene extends Scene {
     const NUM_SIDES = 6;
     const ROTATION_ANGLE = (2 * Math.PI) / NUM_SIDES;
     const TUNNEL_HEIGHT =
-      2 * Math.sin(ROTATION_ANGLE) * (PANES_PER_SIDE * PANE_WIDTH);
+      (PANES_PER_SIDE * PANE_WIDTH) / (Math.tan(Math.PI / NUM_SIDES));
 
     this.PANE_DEPTH = PANE_DEPTH;
     this.PANE_WIDTH = PANE_WIDTH;
@@ -258,6 +258,10 @@ class Base_Scene extends Scene {
     this.PANE_START_Y = -this.TUNNEL_HEIGHT / 2;
 
     this.SPHERE_RADIUS = 0.2;
+
+    this.MAX_GAME_SPEED = 60;
+
+    this.TEST_COLLISION_BASIS = false;
 
     this.EPSILON = 0.05; // min distance for contact
 
@@ -292,9 +296,9 @@ class Base_Scene extends Scene {
     this.jump_end = 0;
     this.y_velocity = 0;
     this.y_acceleration = 0;
-    this.gravity_acceleration = -34;
+    this.gravity_acceleration = -54;
     this.jump_height = 3.0;
-    this.jump_velocity = 21;
+    this.jump_velocity = 26;
 
     this.gravity = 7000;
 
@@ -316,7 +320,7 @@ class Base_Scene extends Scene {
       for (let k = 0; k < 20; k++) {
         let row = [];
         for (let j = 0; j < NUM_SIDES * PANES_PER_SIDE; j++) {
-          if (k < 6) row.push(1)
+          if (k < 6) row.push(1);
           else row.push(Math.random() < 0.5);
         }
         level.push(row);
@@ -459,7 +463,9 @@ export class Assignment2 extends Base_Scene {
 
   draw_ball(context, program_state, test_side = 0) {
     if (!this.intersecting || this.is_jumping)
-      this.y_acceleration = this.gravity_acceleration;
+      this.y_acceleration = this.TEST_COLLISION_BASIS
+        ? 0
+        : this.gravity_acceleration;
     else {
       this.y_velocity = 0;
       this.y_acceleration = 0;
@@ -470,13 +476,14 @@ export class Assignment2 extends Base_Scene {
     // console.log((this.y_velocity * dt) / 1000);
 
     let dy = (this.y_velocity * dt) / 1000;
-    if (
-      this.sphere_transform.times(vec4(0, 0, 0, 1))[1] -
-        this.SPHERE_RADIUS -
-        this.EPSILON >
-      this.BOTTOM_SIDE_Y
-    )
-      this.is_jumping = false;
+    if (this.is_jumping) dy = Math.max(dy, this.EPSILON);
+    // if (
+    //   this.sphere_transform.times(vec4(0, 0, 0, 1))[1] -
+    //     this.SPHERE_RADIUS -
+    //     this.EPSILON >
+    //   this.BOTTOM_SIDE_Y
+    // )
+    this.is_jumping = false;
 
     // const rotated_spere = this.rotated_space(this.sphere_transform);
 
@@ -638,46 +645,52 @@ export class Assignment2 extends Base_Scene {
     }
     let new_pos = this.sphere_transform.times(vec4(0, 0, 0, 1));
     let i = test_side;
-    let j = 1;
+    let j = 0;
     left_vector = this.rotation(i).times(vec4(-1, 0, 0, 1));
 
-    let rotating_sphere = this.sphere_transform.times(
-      Mat4.rotation(
-        -program_state.animation_time / 120,
-        right_vector[0],
-        right_vector[1],
-        0
-      )
-    );
-    // .times(
-    //   Mat4.scale(
-    //     1 / this.SPHERE_RADIUS,
-    //     1 / this.SPHERE_RADIUS,
-    //     1 / this.SPHERE_RADIUS
-    //   )
-    // )
-    // .times(
-    //   Mat4.inverse(
-    //     Mat4.identity()
+    let rotating_sphere = !this.TEST_COLLISION_BASIS
+      ? this.sphere_transform.times(
+          Mat4.rotation(
+            -program_state.animation_time / 120,
+            right_vector[0],
+            right_vector[1],
+            0
+          )
+        )
+      : this.sphere_transform
+          .times(
+            Mat4.scale(
+              1 / this.SPHERE_RADIUS,
+              1 / this.SPHERE_RADIUS,
+              1 / this.SPHERE_RADIUS
+            )
+          )
+          .times(
+            Mat4.inverse(
+              Mat4.identity()
 
-    //       .times(Mat4.translation(-new_pos[0], -new_pos[1], -new_pos[2]))
-    //       .times(
-    //         this.rotation(i).times(
-    //           Mat4.translation(new_pos[0], new_pos[1], new_pos[2])
-    //         )
-    //       )
-    //       .times(
-    //         Mat4.translation(
-    //           j * this.PANE_WIDTH,
-    //           0, //  -j * this.PANE_WIDTH,
-    //           0
-    //         )
-    //       )
-    //   ).times(
-    //     Mat4.scale(this.SPHERE_RADIUS, this.SPHERE_RADIUS, this.SPHERE_RADIUS)
-    //   ) //.times(
-    //   //  Mat4.rotation(-program_state.animation_time / 120, 1, 0, 0)
-    // );
+                .times(Mat4.translation(-new_pos[0], -new_pos[1], -new_pos[2]))
+                .times(
+                  this.rotation(i).times(
+                    Mat4.translation(new_pos[0], new_pos[1], new_pos[2])
+                  )
+                )
+                .times(
+                  Mat4.translation(
+                    j * this.PANE_WIDTH,
+                    0, //  -j * this.PANE_WIDTH,
+                    0
+                  )
+                )
+            ).times(
+              Mat4.scale(
+                this.SPHERE_RADIUS,
+                this.SPHERE_RADIUS,
+                this.SPHERE_RADIUS
+              )
+            ) //.times(
+            //   //  Mat4.rotation(-program_state.animation_time / 120, 1, 0, 0)
+          );
 
     this.shapes.sphere.draw(
       context,
@@ -693,46 +706,6 @@ export class Assignment2 extends Base_Scene {
   do_rotation(side) {
     console.log("Rotating", side);
     this.rotation_side = side;
-    // const new_pos = this.sphere_transform.times(vec4(0, 0, 0, 1));
-    // this.sphere_transform = this.sphere_transform
-    //   .times(
-    //     Mat4.translation(
-    //       (-1 / this.SPHERE_RADIUS) * new_pos[0],
-    //       (-1 / this.SPHERE_RADIUS) * new_pos[1],
-    //       0
-    //     )
-    //   )
-    //   .times(this.rotation(this.rotation_side))
-    //   .times(
-    //     Mat4.translation(
-    //       (1 / this.SPHERE_RADIUS) * new_pos[0],
-    //       (1 / this.SPHERE_RADIUS) * new_pos[1],
-    //       0
-    //     )
-    //   )
-    //   .map((x, i) => Vector.from(this.sphere_transform[i]).mix(x, 0.1));
-
-    // this.manager.update_initial_tranform(
-    //   this.manager
-    //     .get_initial_transform()
-    //     .pre_multiply(
-    //       Mat4.translation(-this.PANE_START_X, -this.PANE_START_Y, 0)
-    //     )
-    //     .times(this.rotation(this.rotation_side))
-    //     .times(Mat4.translation(this.PANE_START_X, this.PANE_START_Y, 0))
-    //     .map((x, i) =>
-    //       Vector.from(this.manager.get_initial_transform()[i]).mix(x, 0.1)
-    //     )
-    // .times(Mat4.translation(this.PANE_WIDTH* 2, this.TUNNEL_HEIGHT / 2, 0))
-    // .times(this.rotation(this.rotation_side))
-    // .times(Mat4.translation(-this.PANE_WIDTH* 2, -this.TUNNEL_HEIGHT / 2, 0))
-    // .times(
-    //   Mat4.translation(
-    //     -this.PANE_WIDTH * ((this.PANES_PER_SIDE - 1) / 2),
-    //     -this.TUNNEL_HEIGHT / 2
-    //   )
-    // )
-    // );
   }
 
   drawStars(context, program_state) {
@@ -786,13 +759,7 @@ export class Assignment2 extends Base_Scene {
 
   is_colliding(model_transform, pane_transform, i, j, print = false) {
     let z = model_transform
-      .times(
-        Mat4.scale(
-          this.PANE_WIDTH / 2,
-          this.PANE_WIDTH / 2,
-          this.PANE_DEPTH / 2
-        )
-      )
+      .times(Mat4.scale(this.PANE_WIDTH / 2, 1, this.PANE_DEPTH / 2))
       .times(vec4(0, 0, 0, 1))[2];
     const paneCoords = vec4(this.PANE_START_X, this.PANE_START_Y, z, 1);
     const new_pos = this.sphere_transform
@@ -927,16 +894,13 @@ export class Assignment2 extends Base_Scene {
             this.intersecting = true;
             // check all right and left rotations
             if (this.prev_pressed == 1) {
-              for (let k = 1; k < this.NUM_SIDES / 2; k++) {
-                if (i == (this.rotation_side + k) % this.NUM_SIDES)
+              for (let k = 1; k < num_sides / 2; k++) {
+                if (i == (this.rotation_side + k) % num_sides)
                   this.next_rotation = i;
               }
             } else if (this.prev_pressed == 0) {
-              for (let k = 1; k < this.NUM_SIDES / 2; k++) {
-                if (
-                  i ==
-                  (this.rotation_side - k + this.NUM_SIDES) % this.NUM_SIDES
-                )
+              for (let k = 1; k < num_sides / 2; k++) {
+                if (i == (this.rotation_side - k + num_sides) % num_sides)
                   this.next_rotation = i;
               }
             }
@@ -951,21 +915,21 @@ export class Assignment2 extends Base_Scene {
           //   console.log();
           // }
 
-          let above_pane = this.ball_is_above_pane(
-            model_transform
-              .times(curr_transform)
-              .times(
-                Mat4.scale(
-                  this.PANE_WIDTH / 2,
-                  this.PANE_WIDTH / 2,
-                  this.PANE_DEPTH / 2
-                )
-              )
-              .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
-          );
-          if (above_pane) {
-            this.pane_below = true;
-          }
+          // let above_pane = this.ball_is_above_pane(
+          //   model_transform
+          //     .times(curr_transform)
+          //     .times(
+          //       Mat4.scale(
+          //         this.PANE_WIDTH / 2,
+          //         this.PANE_WIDTH / 2,
+          //         this.PANE_DEPTH / 2
+          //       )
+          //     )
+          //     .times(Mat4.rotation(Math.PI / 2, 1, 0, 0))
+          // );
+          // if (above_pane) {
+          //   this.pane_below = true;
+          // }
         }
         curr_transform = curr_transform.times(
           Mat4.translation(this.PANE_WIDTH, 0, 0)
@@ -1019,12 +983,16 @@ export class Assignment2 extends Base_Scene {
           .times(this.rotation(this.rotation_side))
           .times(Mat4.scale(4, 4, 4))
           .times(Mat4.translation(0, this.TUNNEL_HEIGHT / 4, 6))
-      ).map((x, i) => Vector.from(program_state.camera_inverse[i]).mix(x, 0.1));
+      ).map((x, i) => Vector.from(program_state.camera_inverse[i]).mix(x, 0.2));
     }
 
     let model_transform = this.manager.get_initial_transform();
-    let level = Math.floor(t / 10) + 1;
-    let game_speed = 10;
+    let level = Math.floor(t / 20) + 1;
+    let game_speed = level * 7;
+    if (game_speed > this.MAX_GAME_SPEED) {
+      game_speed = this.MAX_GAME_SPEED;
+      level = 10;
+    }
     if (model_transform == -1) {
       model_transform = Mat4.identity().times(
         Mat4.translation(this.PANE_START_X, this.PANE_START_Y, t * game_speed)
@@ -1045,7 +1013,7 @@ export class Assignment2 extends Base_Scene {
     let new_initial_transform = model_transform;
     let next_model_transform = -1;
     model_transform = model_transform;
-    // this.drawStars(context, program_state);
+    this.drawStars(context, program_state);
     this.pane_below = false;
     this.intersecting = false;
     for (let row of rows) {
@@ -1073,11 +1041,13 @@ export class Assignment2 extends Base_Scene {
     }
     if (rows_behind_camera == 0)
       this.manager.update_initial_tranform(new_initial_transform);
-    this.draw_ball(context, program_state);
-    // this.draw_ball(context, program_state, 1);
-    // this.draw_ball(context, program_state, 2);
-    // this.draw_ball(context, program_state, 3);
-    // this.draw_ball(context, program_state, 4);
+    this.draw_ball(context, program_state, 0);
+    if (this.TEST_COLLISION_BASIS) {
+      this.draw_ball(context, program_state, 1);
+      this.draw_ball(context, program_state, 2);
+      this.draw_ball(context, program_state, 3);
+      this.draw_ball(context, program_state, 4);
+    }
     // this.draw_ball(context, program_state, 5);
     if (this.next_rotation != this.rotation_side)
       this.do_rotation(this.next_rotation);
