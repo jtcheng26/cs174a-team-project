@@ -16,7 +16,7 @@ export class GameManager {
     // only for first level
 
     /* Constants */
-    this.rows_to_render = 23;
+    this.rows_to_render = 30;
 
     /* Update during game */
     this.rows_deque = [];
@@ -61,10 +61,10 @@ export class GameManager {
   }
 
   generate_new_row(size) {
-    const seed = Math.floor(Math.random() * (1 << size));
+    // const seed = Math.floor(Math.random() * (1 << size));
     let row = new Array(size);
     for (let i = 0; i < size; i++) {
-      row[i] = (seed >> i) & 1;
+      row[i] = Math.random() < 0.7;
     }
     return row;
   }
