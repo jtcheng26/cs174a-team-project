@@ -236,9 +236,31 @@ class Base_Scene extends Scene {
   }
 
   reset_game(program_state) {
-    this.sphere_transform = Mat4.identity().times(
-      Mat4.translation(1, 0.2, -6).times(Mat4.scale(0.2, 0.2, 0.2))
-    );
+    const PANE_WIDTH = 1;
+    const PANES_PER_SIDE = 3;
+    const NUM_SIDES = 6;
+    const ROTATION_ANGLE = (2 * Math.PI) / NUM_SIDES;
+    const TUNNEL_HEIGHT =
+      2 * Math.sin(ROTATION_ANGLE) * (PANES_PER_SIDE * PANE_WIDTH);
+
+    this.PANE_WIDTH = PANE_WIDTH;
+    this.PANES_PER_SIDE = PANES_PER_SIDE;
+    this.NUM_SIDES = NUM_SIDES;
+    this.ROTATION_ANGLE = ROTATION_ANGLE;
+
+    this.TUNNEL_HEIGHT = TUNNEL_HEIGHT;
+    this.SIDE_WIDTH = PANE_WIDTH * PANES_PER_SIDE;
+    this.BOTTOM_SIDE_Y = -TUNNEL_HEIGHT / 2;
+
+    this.SPHERE_RADIUS = 0.2;
+
+    this.EPSILON = 0.01; // min distance for contact
+
+    this.sphere_transform = Mat4.identity()
+      .times(Mat4.translation(0, -TUNNEL_HEIGHT / 4, 2))
+      .times(
+        Mat4.scale(this.SPHERE_RADIUS, this.SPHERE_RADIUS, this.SPHERE_RADIUS)
+      );
 
     //Need globally stored program time for smooth ball transitions
     this.mili_t = 0;
@@ -308,7 +330,7 @@ class Base_Scene extends Scene {
       );
       // Define the global camera and projection matrices, which are stored in program_state.
       // this.camera_location = this.rotation(this.side)
-      this.camera_location = this.rotation(this.rotation_side);
+      this.camera_location = Mat4.translation(0, this.TUNNEL_HEIGHT / 4, 0);
       this.camera_origin = this.camera_location;
       // program_state.set_camera(this.camera_location);
       program_state.camera_inverse = this.camera_location.map((x, i) =>
@@ -323,18 +345,20 @@ class Base_Scene extends Scene {
     );
 
     // *** Lights: *** Values of vector or point lights.
-    this.light_position = vec4(-0.1, -0.4, 1.2, -0.15);
+    this.light_position = vec4(0, 0, 0.5, -0.15);
     // this.light_position = vec4(-0.1, -0.4, 1.2, Math.sin(program_state.animation_time/1000));
     // console.log(Math.sin(program_state.animation_time / 1000))
     program_state.lights = [
       new Light(this.light_position, color(1, 1, 1, 1), 9999),
+      // new Light(Mat4.translation(0,0,-5).times(this.light_position), color(1, 0.2, 1, 1), 0.2),
     ];
   }
 
   rotation(side) {
-    const center_translation = Mat4.translation(1, 1.5 * Math.sqrt(3), 0);
-    const rotated = Mat4.rotation(side * (Math.PI / 3), 0, 0, 1);
-    const camera_location = Mat4.translation(-1, -1.5, 0);
+    // const center_translation = Mat4.translation(0, 0, 0);
+    const NUM_SIDES = 6;
+    const rotated = Mat4.rotation((side * 2 * Math.PI) / NUM_SIDES, 0, 0, 1);
+    // const camera_location = Mat4.translation(-1, -1.5, 0);
     // const sphere_ct = Mat4.translation(0.5, 0.2, -6, 0)
     // this.sphere_transform = this.sphere_transform.times(sphere_ct.times(Mat4.inverse(rotated)).times(Mat4.inverse(sphere_ct)))
     // console.log(this.sphere_transform)
@@ -342,9 +366,7 @@ class Base_Scene extends Scene {
     // this.sphere_transform = this.sphere_transform.times(Mat4.rotation(-side * (Math.PI / 3), 0, 0, 1))
     // console.log(this.sphere_transform)
 
-    return camera_location.times(
-      center_translation.times(rotated).times(Mat4.inverse(center_translation))
-    );
+    return rotated;
   }
 }
 
@@ -439,7 +461,12 @@ export class Assignment2 extends Base_Scene {
   }
 
   draw_ball(context, program_state) {
-    if (!this.pane_below) this.y_acceleration = this.gravity_acceleration;
+    if (
+      !this.pane_below  ||
+      this.sphere_transform.times(vec4(0, 0, 0, 1))[1] - this.SPHERE_RADIUS >
+        this.BOTTOM_SIDE_Y
+    )
+      this.y_acceleration = this.gravity_acceleration;
     if (this.prev_t == -1) this.prev_t = 0;
     let dt = program_state.animation_time - this.prev_t * 1000;
     this.y_velocity += (this.y_acceleration * dt) / 1000;
@@ -447,7 +474,7 @@ export class Assignment2 extends Base_Scene {
 
     let dy = (this.y_velocity * dt) / 1000;
 
-    const rotated_spere = this.rotated_space(this.sphere_transform)
+    // const rotated_spere = this.rotated_space(this.sphere_transform);
 
     // if (
     //   this.sphere_transform.times(vec4(0, 0, 0, 1))[1] +
@@ -455,11 +482,17 @@ export class Assignment2 extends Base_Scene {
     // ) {
     if (
       this.pane_below &&
-      rotated_spere.times(vec4(0, 0, 0, 1))[1] + dy <= 0
+      this.sphere_transform.times(vec4(0, 0, 0, 1))[1] +
+        dy -
+        this.SPHERE_RADIUS <=
+        this.BOTTOM_SIDE_Y
     ) {
       this.y_velocity = 0;
       this.y_acceleration = 0;
-      dy = -rotated_spere.times(vec4(0, 0, 0, 1))[1] + 0.2;
+      dy =
+        this.sphere_transform.times(vec4(0, 0, 0, 1))[1] -
+        this.SPHERE_RADIUS -
+        this.BOTTOM_SIDE_Y;
       this.is_jumping = false;
     }
     // }
@@ -542,7 +575,9 @@ export class Assignment2 extends Base_Scene {
           this.rotation_side = 0;
         }
         this.camera_location = this.rotation(this.rotation_side);
-        this.sphere_transform = this.sphere_transform.times(Mat4.rotation(-(Math.PI / 3), 0, 0, 1))
+        this.sphere_transform = this.sphere_transform.times(
+          Mat4.rotation(-(Math.PI / 3), 0, 0, 1)
+        );
         console.log("left panel");
       }
       this.sphere_transform = this.sphere_transform.times(
@@ -711,9 +746,12 @@ export class Assignment2 extends Base_Scene {
     //   console.log(this.sphere_transform.times(vec4(0, 0, 0, 1)));
     super.display(context, program_state);
     // program_state.set_camera(this.camera_location);
-    program_state.camera_inverse = this.camera_location.map((x, i) =>
-      Vector.from(program_state.camera_inverse[i]).mix(x, 0.1)
-    );
+    // if (this.prev_t < 5)
+      program_state.camera_inverse = Mat4.inverse(
+        this.sphere_transform
+          .times(Mat4.scale(4,4,4))
+          .times(Mat4.translation(0, this.TUNNEL_HEIGHT / 4, 6))
+      );
 
     this.mili_t = program_state.animation_time;
     let t = program_state.animation_time / 1000;
@@ -721,9 +759,15 @@ export class Assignment2 extends Base_Scene {
     let level = Math.floor(t / 10) + 1;
     let game_speed = 10;
     if (model_transform == -1) {
-      model_transform = Mat4.identity().times(
-        Mat4.translation(0, 0, t * game_speed)
-      );
+      model_transform = Mat4.identity()
+        .times(this.rotation(this.rotation_side))
+        .times(
+          Mat4.translation(
+            -this.PANE_WIDTH * ((this.PANES_PER_SIDE - 1) / 2),
+            -this.TUNNEL_HEIGHT / 2,
+            t * game_speed
+          )
+        );
     } else {
       model_transform = model_transform.times(
         Mat4.translation(0, 0, (t - this.prev_t) * game_speed)
