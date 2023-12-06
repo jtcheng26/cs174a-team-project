@@ -1,6 +1,6 @@
 import { defs, tiny } from "./examples/common.js";
 
-import { GameManager, stringToMatrix } from "./gameManager.js";
+import { GameManager, stringToMatrix, Level } from "./gameManager.js";
 
 const {
   Vector,
@@ -193,19 +193,18 @@ class Base_Scene extends Scene {
     // The white material and basic shader are used for drawing the outline.
     this.white = new Material(new defs.Basic_Shader());
 
-    this.levels = [];
-    for (let i = 0; i < 20; i++) {
-      let temp = [];
-      for (let j = 0; j < 13; j++) {
-        temp.push(Math.floor(Math.random() * 2));
-      }
-      this.levels.push(temp);
-    }
-    this.reset_game({});
+    // this.levels = [];
+    // for (let i = 0; i < 20; i++) {
+    //   let temp = [];
+    //   for (let j = 0; j < 13; j++) {
+    //     temp.push(Math.floor(Math.random() * 2));
+    //   }
+    //   this.levels.push(temp);
+    // }
 
     //STARS
     this.stars_deque = [];
-    for (let i = 0; i < 500; i++) {
+    for (let i = 0; i < 150; i++) {
       let star_trans = [
         (Math.random() * 20 + 5) * (Math.random() >= 0.5 ? 1 : -1),
         (Math.random() * 30 - 15) * (Math.random() >= 0.5 ? 1 : 1),
@@ -225,37 +224,39 @@ class Base_Scene extends Scene {
     }
 
     this.panel_colors = [
-      color(240 / 255, 77 / 255, 77 / 255, 1),
+      color(240 / 255, 77 / 255, 77 / 255, 0.8),
       color(250 / 255, 146 / 255, 42 / 255, 0.8),
-      color(243 / 255, 255 / 255, 79 / 255, 1),
+      color(243 / 255, 255 / 255, 79 / 255, 0.8),
       color(0.1, 0.7, 0.5, 1),
-      color(79 / 255, 176 / 255, 255 / 255, 1),
-      color(153 / 255, 94 / 255, 247 / 255, 1),
-      color(244 / 255, 94 / 255, 247 / 255, 1),
+      color(79 / 255, 176 / 255, 255 / 255, 0.8),
+      color(153 / 255, 94 / 255, 247 / 255, 0.8),
+      color(244 / 255, 94 / 255, 247 / 255, 0.8),
     ];
+
+    this.reset_game({});
   }
 
   reset_game(program_state) {
-    const PANE_DEPTH = 3; // z-direction
-    const PANE_WIDTH = 1; // x-direction
-    const PANES_PER_SIDE = 3;
-    const NUM_SIDES = 6;
-    const ROTATION_ANGLE = (2 * Math.PI) / NUM_SIDES;
-    const TUNNEL_HEIGHT =
-      (PANES_PER_SIDE * PANE_WIDTH) / (Math.tan(Math.PI / NUM_SIDES));
+    // const PANE_DEPTH = 3; // z-direction
+    // const PANE_WIDTH = 1; // x-direction
+    // const PANES_PER_SIDE = 3;
+    // const NUM_SIDES = 6;
+    // const ROTATION_ANGLE = (2 * Math.PI) / NUM_SIDES;
+    // const TUNNEL_HEIGHT =
+    //   (PANES_PER_SIDE * PANE_WIDTH) / Math.tan(Math.PI / NUM_SIDES);
 
-    this.PANE_DEPTH = PANE_DEPTH;
-    this.PANE_WIDTH = PANE_WIDTH;
-    this.PANES_PER_SIDE = PANES_PER_SIDE;
-    this.NUM_SIDES = NUM_SIDES;
-    this.ROTATION_ANGLE = ROTATION_ANGLE;
+    // this.PANE_DEPTH = PANE_DEPTH;
+    // this.PANE_WIDTH = PANE_WIDTH;
+    // this.PANES_PER_SIDE = PANES_PER_SIDE;
+    // this.NUM_SIDES = NUM_SIDES;
+    // this.ROTATION_ANGLE = ROTATION_ANGLE;
 
-    this.TUNNEL_HEIGHT = TUNNEL_HEIGHT;
-    this.SIDE_WIDTH = PANE_WIDTH * PANES_PER_SIDE;
-    this.BOTTOM_SIDE_Y = -TUNNEL_HEIGHT / 2;
+    // this.TUNNEL_HEIGHT = TUNNEL_HEIGHT;
+    // this.SIDE_WIDTH = PANE_WIDTH * PANES_PER_SIDE;
+    // this.BOTTOM_SIDE_Y = -TUNNEL_HEIGHT / 2;
 
-    this.PANE_START_X = -this.PANE_WIDTH * ((this.PANES_PER_SIDE - 1) / 2);
-    this.PANE_START_Y = -this.TUNNEL_HEIGHT / 2;
+    // this.PANE_START_X = -this.PANE_WIDTH * ((this.PANES_PER_SIDE - 1) / 2);
+    // this.PANE_START_Y = -this.TUNNEL_HEIGHT / 2;
 
     this.SPHERE_RADIUS = 0.2;
 
@@ -266,12 +267,6 @@ class Base_Scene extends Scene {
     this.EPSILON = 0.05; // min distance for contact
 
     this.intersecting = true;
-
-    this.sphere_transform = Mat4.identity()
-      .times(Mat4.translation(0, -TUNNEL_HEIGHT / 2 + this.SPHERE_RADIUS, 2))
-      .times(
-        Mat4.scale(this.SPHERE_RADIUS, this.SPHERE_RADIUS, this.SPHERE_RADIUS)
-      );
 
     //Need globally stored program time for smooth ball transitions
     this.mili_t = 0;
@@ -308,29 +303,118 @@ class Base_Scene extends Scene {
     this.side = 5;
     this.rotation_side = 0;
     this.next_rotation = 0;
-    this.camera_location = this.rotation(this.rotation_side);
 
     this.prev_pressed = -1;
 
     program_state.animation_time = 0;
 
     const levels = [];
-    for (let i = 0; i < 1; i++) {
+    const configs = [];
+
+    const starting_configs = [
+      new Level(2, 6, this.panel_colors[0], 7, 1, 3, 0),
+      new Level(3, 5, this.panel_colors[1], 8, 1, 3, 1),
+    ];
+
+    for (let i = 0; i < 2; i++) {
       let level = [];
-      for (let k = 0; k < 20; k++) {
+      let config = starting_configs[i];
+      for (let k = 0; k < 25; k++) {
         let row = [];
-        for (let j = 0; j < NUM_SIDES * PANES_PER_SIDE; j++) {
+        for (let j = 0; j < config.NUM_SIDES * config.PANES_PER_SIDE; j++) {
           if (k < 6) row.push(1);
           else row.push(Math.random() < 0.5);
         }
         level.push(row);
       }
       levels.push(level);
+      configs.push(config);
     }
-    const game = new GameManager(levels);
-    game.update_row_size(this.PANES_PER_SIDE * this.NUM_SIDES);
+    this.current_config = configs[0];
+    const game = new GameManager(levels, configs);
+    game.update_row_size(
+      this.current_config.PANES_PER_SIDE * this.current_config.NUM_SIDES
+    );
+    this.sphere_transform = Mat4.identity()
+      .times(
+        Mat4.translation(
+          0,
+          -this.current_config.TUNNEL_HEIGHT / 2 + this.SPHERE_RADIUS,
+          2
+        )
+      )
+      .times(
+        Mat4.scale(this.SPHERE_RADIUS, this.SPHERE_RADIUS, this.SPHERE_RADIUS)
+      );
+    this.camera_location = this.rotation(this.rotation_side);
     this.manager = game;
     this.prev_t = -1;
+  }
+
+  reset_level(program_state) {
+    this.SPHERE_RADIUS = 0.2;
+
+    this.MAX_GAME_SPEED = 60;
+
+    this.TEST_COLLISION_BASIS = false;
+
+    this.EPSILON = 0.05; // min distance for contact
+
+    this.intersecting = true;
+
+    //Need globally stored program time for smooth ball transitions
+    this.mili_t = 0;
+    this.mark_begin = 0;
+    this.mark_end = 0;
+
+    this.key_shift = 10.0; // How much distance the ball should move on each keypress
+    this.gradient_x = 50; //How fast the ball should move in its change of direction. Higher number is slower.
+    this.delta_x = this.key_shift / this.gradient_x;
+    this.rel_x = 0;
+
+    this.left_pressed = false;
+    this.right_pressed = false;
+
+    this.bounds = 0; //Simple range from -13 to 13 for ball movement. Note: needs to be set by inspection.
+
+    this.pane_below = true;
+
+    //JUMP MOTION
+    this.is_jumping = false;
+    // this.jump_begin = 0;
+    this.jump_end = 0;
+    this.y_velocity = 0;
+    this.y_acceleration = 0;
+    this.gravity_acceleration = -54;
+    this.jump_height = 3.0;
+    this.jump_velocity = 26;
+
+    this.gravity = 7000;
+
+    this.jump_origin = Mat4.identity();
+
+    //ROTATION
+    this.side = 5;
+    this.rotation_side = 0;
+    this.next_rotation = 0;
+
+    this.prev_pressed = -1;
+
+    this.manager.reset_to_level(this.current_config.id);
+    this.camera_location = this.rotation(this.rotation_side);
+    this.prev_t = -1;
+    this.sphere_transform = Mat4.identity()
+      .times(
+        Mat4.translation(
+          0,
+          -this.current_config.TUNNEL_HEIGHT / 2 + this.SPHERE_RADIUS,
+          2
+        )
+      )
+      .times(
+        Mat4.scale(this.SPHERE_RADIUS, this.SPHERE_RADIUS, this.SPHERE_RADIUS)
+      );
+    program_state.animation_time = 0;
   }
 
   display(context, program_state) {
@@ -344,7 +428,11 @@ class Base_Scene extends Scene {
       );
       // Define the global camera and projection matrices, which are stored in program_state.
       // this.camera_location = this.rotation(this.side)
-      this.camera_location = Mat4.translation(0, this.TUNNEL_HEIGHT / 4, 0);
+      this.camera_location = Mat4.translation(
+        0,
+        this.current_config.TUNNEL_HEIGHT / 4,
+        0
+      );
       this.camera_origin = this.camera_location;
       // program_state.set_camera(this.camera_location);
       program_state.camera_inverse = this.camera_location.map((x, i) =>
@@ -368,9 +456,19 @@ class Base_Scene extends Scene {
     ];
   }
 
+  arb_rotation(side, config) {
+    const rotated = Mat4.rotation(side * config.ROTATION_ANGLE, 0, 0, 1);
+    return rotated;
+  }
+
   rotation(side) {
     // const center_translation = Mat4.translation(0, 0, 0);
-    const rotated = Mat4.rotation(side * this.ROTATION_ANGLE, 0, 0, 1);
+    const rotated = Mat4.rotation(
+      side * this.current_config.ROTATION_ANGLE,
+      0,
+      0,
+      1
+    );
     // const camera_location = Mat4.translation(-1, -1.5, 0);
     // const sphere_ct = Mat4.translation(0.5, 0.2, -6, 0)
     // this.sphere_transform = this.sphere_transform.times(sphere_ct.times(Mat4.inverse(rotated)).times(Mat4.inverse(sphere_ct)))
@@ -437,29 +535,29 @@ export class Assignment2 extends Base_Scene {
     );
   }
 
-  panel_perspective_switch(method, jumping, ball_vcs, boundary) {
-    if (method == "left") {
-      if (ball_vcs[1] <= boundary) {
-        this.is_jumping = false;
-        this.rotation_side = this.rotation_side + 1;
-        if (this.rotation_side > 5) {
-          this.rotation_side = 0;
-        }
-        this.camera_location = this.rotation(this.rotation_side);
-        console.log("left panel");
-      }
-    } else if (method == "right") {
-      if (ball_vcs[1] <= boundary) {
-        this.is_jumping = false;
-        this.rotation_side = this.rotation_side - 1;
-        if (this.rotation_side < 0) {
-          this.rotation_side = 5;
-        }
-        this.camera_location = this.rotation(this.rotation_side);
-        console.log("right panel");
-      }
-    }
-  }
+  // panel_perspective_switch(method, jumping, ball_vcs, boundary) {
+  //   if (method == "left") {
+  //     if (ball_vcs[1] <= boundary) {
+  //       this.is_jumping = false;
+  //       this.rotation_side = this.rotation_side + 1;
+  //       if (this.rotation_side > 5) {
+  //         this.rotation_side = 0;
+  //       }
+  //       this.camera_location = this.rotation(this.rotation_side);
+  //       console.log("left panel");
+  //     }
+  //   } else if (method == "right") {
+  //     if (ball_vcs[1] <= boundary) {
+  //       this.is_jumping = false;
+  //       this.rotation_side = this.rotation_side - 1;
+  //       if (this.rotation_side < 0) {
+  //         this.rotation_side = 5;
+  //       }
+  //       this.camera_location = this.rotation(this.rotation_side);
+  //       console.log("right panel");
+  //     }
+  //   }
+  // }
 
   draw_ball(context, program_state, test_side = 0) {
     if (!this.intersecting || this.is_jumping)
@@ -476,7 +574,7 @@ export class Assignment2 extends Base_Scene {
     // console.log((this.y_velocity * dt) / 1000);
 
     let dy = (this.y_velocity * dt) / 1000;
-    if (this.is_jumping) dy = Math.max(dy, this.EPSILON);
+    if (this.is_jumping) dy = Math.max(dy, 1.2 * this.EPSILON);
     // if (
     //   this.sphere_transform.times(vec4(0, 0, 0, 1))[1] -
     //     this.SPHERE_RADIUS -
@@ -574,7 +672,7 @@ export class Assignment2 extends Base_Scene {
 
     let pos_sphere = this.sphere_transform.times(vec4(0, 0, 0, 1));
     if (pos_sphere[0] * grav_vector[0] + pos_sphere[1] * grav_vector[1] < -5) {
-      this.reset_game(program_state);
+      this.reset_level(program_state);
       return;
     }
     // console.log(pos_sphere[0], pos_sphere[1], pos_sphere[2])
@@ -677,7 +775,7 @@ export class Assignment2 extends Base_Scene {
                 )
                 .times(
                   Mat4.translation(
-                    j * this.PANE_WIDTH,
+                    j * this.current_config.PANE_WIDTH,
                     0, //  -j * this.PANE_WIDTH,
                     0
                   )
@@ -737,31 +835,32 @@ export class Assignment2 extends Base_Scene {
     }
   }
 
-  ball_is_above_pane(pane_transform) {
-    let sphere_coords = this.camera_location
-      .times(this.sphere_transform)
-      .times(vec4(0, 0, 0, 1)); // center
-    let pane_coords = this.camera_location
-      .times(pane_transform)
-      .times(vec4(0, 0, 0, 1)); // center
-    const PANE_SIZE = 1;
-    let p_xmin = pane_coords[0] - PANE_SIZE / 2;
-    let p_xmax = p_xmin + PANE_SIZE;
-    let p_zmin = pane_coords[2] - 5 / 2;
-    let p_zmax = p_zmin + 5;
+  // ball_is_above_pane(pane_transform) {
+  //   let sphere_coords = this.camera_location
+  //     .times(this.sphere_transform)
+  //     .times(vec4(0, 0, 0, 1)); // center
+  //   let pane_coords = this.camera_location
+  //     .times(pane_transform)
+  //     .times(vec4(0, 0, 0, 1)); // center
+  //   const PANE_SIZE = 1;
+  //   let p_xmin = pane_coords[0] - PANE_SIZE / 2;
+  //   let p_xmax = p_xmin + PANE_SIZE;
+  //   let p_zmin = pane_coords[2] - 5 / 2;
+  //   let p_zmax = p_zmin + 5;
 
-    let x_in_bound = p_xmin <= sphere_coords[0] && sphere_coords[0] <= p_xmax;
-    let z_in_bound = p_zmin <= sphere_coords[2] && sphere_coords[2] <= p_zmax;
-    let y_in_bound = sphere_coords[1] - 0.2 >= pane_coords[1];
+  //   let x_in_bound = p_xmin <= sphere_coords[0] && sphere_coords[0] <= p_xmax;
+  //   let z_in_bound = p_zmin <= sphere_coords[2] && sphere_coords[2] <= p_zmax;
+  //   let y_in_bound = sphere_coords[1] - 0.2 >= pane_coords[1];
 
-    return x_in_bound && y_in_bound && z_in_bound;
-  }
+  //   return x_in_bound && y_in_bound && z_in_bound;
+  // }
 
-  is_colliding(model_transform, pane_transform, i, j, print = false) {
+  is_colliding(model_transform, pane_transform, config, i, j, print = false) {
     let z = model_transform
-      .times(Mat4.scale(this.PANE_WIDTH / 2, 1, this.PANE_DEPTH / 2))
+      .times(Mat4.scale(config.PANE_WIDTH / 2, 1, config.PANE_DEPTH / 2))
       .times(vec4(0, 0, 0, 1))[2];
-    const paneCoords = vec4(this.PANE_START_X, this.PANE_START_Y, z, 1);
+    const paneCoords = vec4(config.PANE_START_X, config.PANE_START_Y, z, 1);
+    const angle = i * config.ROTATION_ANGLE;
     const new_pos = this.sphere_transform
       // .times(
       //   Mat4.scale(
@@ -772,15 +871,15 @@ export class Assignment2 extends Base_Scene {
       // )
       .times(vec4(0, 0, 0, 1));
 
-    let left_vector = this.rotation(i).times(vec4(-1, 0, 0, 1));
-
     let basis = Mat4.identity()
 
       .times(Mat4.translation(-new_pos[0], -new_pos[1], 0))
       .times(
-        this.rotation(i).times(Mat4.translation(new_pos[0], new_pos[1], 0))
+        Mat4.rotation(angle, 0, 0, 1).times(
+          Mat4.translation(new_pos[0], new_pos[1], 0)
+        )
       )
-      .times(Mat4.translation(j * this.PANE_WIDTH, 0, 0));
+      .times(Mat4.translation(j * config.PANE_WIDTH, 0, 0));
 
     // console.log(left_vector)
     const sphereCoords = this.sphere_transform
@@ -791,7 +890,7 @@ export class Assignment2 extends Base_Scene {
           1 / this.SPHERE_RADIUS
         )
       )
-      .times(Mat4.scale(this.PANE_WIDTH, 1, this.PANE_DEPTH))
+      // .times(Mat4.scale(config.PANE_WIDTH, 1, config.PANE_DEPTH))
 
       .times(Mat4.inverse(basis))
       .times(
@@ -818,10 +917,10 @@ export class Assignment2 extends Base_Scene {
       //   Mat4.translation((-1 / this.SPHERE_RADIUS) * j * this.PANE_WIDTH, 0, 0)
       // )
       .times(vec4(0, 0, 0, 1));
-    const xmin = paneCoords[0] - this.PANE_WIDTH / 2;
-    const xmax = xmin + this.PANE_WIDTH;
-    const zmin = paneCoords[2] - this.PANE_DEPTH / 2;
-    const zmax = zmin + this.PANE_DEPTH;
+    const xmin = paneCoords[0] - config.PANE_WIDTH / 2;
+    const xmax = xmin + config.PANE_WIDTH;
+    const zmin = paneCoords[2] - config.PANE_DEPTH / 2;
+    const zmax = zmin + config.PANE_DEPTH;
     const dist = sphereCoords[1] - this.SPHERE_RADIUS - paneCoords[1];
     let intersect =
       xmin <= sphereCoords[0] &&
@@ -829,22 +928,13 @@ export class Assignment2 extends Base_Scene {
       zmin <= sphereCoords[2] &&
       sphereCoords[2] <= zmax &&
       Math.abs(dist) <= this.EPSILON;
-    if (
-      print &&
-      i == 0 &&
-      j == 1 &&
-      zmin <= sphereCoords[2] &&
-      sphereCoords[2] <= zmax
-    ) {
-      // console.log(paneCoords, xmin, xmax, zmin, zmax, dist, sphereCoords);
-      // console.log(basis)
-    }
     return intersect;
   }
 
   generateFaces(
     num_sides,
     panes_per_side,
+    config,
     context,
     program_state,
     model_transform,
@@ -871,11 +961,7 @@ export class Assignment2 extends Base_Scene {
             model_transform
               .times(curr_transform)
               .times(
-                Mat4.scale(
-                  this.PANE_WIDTH / 2,
-                  this.PANE_WIDTH / 2,
-                  this.PANE_DEPTH / 2
-                )
+                Mat4.scale(config.PANE_WIDTH / 2, 1, config.PANE_DEPTH / 2)
               )
               .times(Mat4.rotation(Math.PI / 2, 1, 0, 0)),
             // this.materials.plastic.override({ color: color(0.1*(i+1),0.1*(i+1),0.1*(i+1),1) })
@@ -885,23 +971,32 @@ export class Assignment2 extends Base_Scene {
           let intersecting_pane = this.is_colliding(
             model_transform,
             curr_transform,
+            config,
             i,
             j,
             true
           );
           if (intersecting_pane) {
-            console.log("intersect", i, j);
+            // console.log("intersect", i, j);
             this.intersecting = true;
-            // check all right and left rotations
-            if (this.prev_pressed == 1) {
-              for (let k = 1; k < num_sides / 2; k++) {
-                if (i == (this.rotation_side + k) % num_sides)
-                  this.next_rotation = i;
-              }
-            } else if (this.prev_pressed == 0) {
-              for (let k = 1; k < num_sides / 2; k++) {
-                if (i == (this.rotation_side - k + num_sides) % num_sides)
-                  this.next_rotation = i;
+            if (
+              this.current_config.id != config.id
+            ) {
+              this.next_rotation = i;
+              this.next_config = config;
+            } else {
+              // check all right and left rotations
+              if (this.prev_pressed == 1) {
+                for (let k = 1; k < num_sides / 2; k++) {
+                  if (i == (this.rotation_side + k) % num_sides)
+                    this.next_rotation = i;
+                }
+              } else if (this.prev_pressed == 0) {
+                for (let k = 1; k < num_sides / 2; k++) {
+                  if (i == (this.rotation_side - k + num_sides) % num_sides) {
+                    this.next_rotation = i;
+                  }
+                }
               }
             }
             // if (i != this.rotation_side) {
@@ -932,13 +1027,13 @@ export class Assignment2 extends Base_Scene {
           // }
         }
         curr_transform = curr_transform.times(
-          Mat4.translation(this.PANE_WIDTH, 0, 0)
+          Mat4.translation(config.PANE_WIDTH, 0, 0)
         );
       }
       curr_transform = curr_transform
-        .times(Mat4.translation(-this.PANE_WIDTH / 2, 0, 0))
+        .times(Mat4.translation(-config.PANE_WIDTH / 2, 0, 0))
         .times(Mat4.rotation(rotation_angle, 0, 0, 1))
-        .times(Mat4.translation(this.PANE_WIDTH / 2, 0, 0));
+        .times(Mat4.translation(config.PANE_WIDTH / 2, 0, 0));
 
       // model_transform = model_transform.times(Mat4.translation(1, 0, 0));
     }
@@ -960,6 +1055,7 @@ export class Assignment2 extends Base_Scene {
     // if (this.is_jumping)
     //   console.log(this.sphere_transform.times(vec4(0, 0, 0, 1)));
     super.display(context, program_state);
+    this.next_config = -1;
     // program_state.set_camera(this.camera_location);
     // if (this.prev_t < 5)
 
@@ -970,32 +1066,32 @@ export class Assignment2 extends Base_Scene {
     //   console.log("rotate");
     // }
 
-    if (this.prev_t == 0) {
+    if (this.prev_t == -1) {
       program_state.camera_inverse = Mat4.inverse(
         this.sphere_transform
           .times(this.rotation(this.rotation_side))
-          .times(Mat4.scale(4, 4, 4))
-          .times(Mat4.translation(0, this.TUNNEL_HEIGHT / 4, 6))
+          .times(Mat4.scale(4, 4, 2))
+          .times(Mat4.translation(0, this.current_config.TUNNEL_HEIGHT / 4, 6))
       );
     } else {
       program_state.camera_inverse = Mat4.inverse(
         this.sphere_transform
           .times(this.rotation(this.rotation_side))
           .times(Mat4.scale(4, 4, 4))
-          .times(Mat4.translation(0, this.TUNNEL_HEIGHT / 4, 6))
+          .times(Mat4.translation(0, this.current_config.TUNNEL_HEIGHT / 4, 6))
       ).map((x, i) => Vector.from(program_state.camera_inverse[i]).mix(x, 0.2));
     }
 
     let model_transform = this.manager.get_initial_transform();
     let level = Math.floor(t / 20) + 1;
-    let game_speed = level * 7;
-    if (game_speed > this.MAX_GAME_SPEED) {
-      game_speed = this.MAX_GAME_SPEED;
-      level = 10;
-    }
+    let game_speed = this.current_config.LEVEL_SPEED;
     if (model_transform == -1) {
       model_transform = Mat4.identity().times(
-        Mat4.translation(this.PANE_START_X, this.PANE_START_Y, t * game_speed)
+        Mat4.translation(
+          this.current_config.PANE_START_X,
+          this.current_config.PANE_START_Y,
+          t * game_speed
+        )
       );
     } else {
       model_transform = model_transform.times(
@@ -1007,6 +1103,7 @@ export class Assignment2 extends Base_Scene {
     // console.log(game_speed);
     // model_transform = model_transform.times(this.sphere_transform)
     const rows = this.manager.get_rows_in_view();
+    const configs = this.manager.get_levels();
     // console.log(rows);
 
     let rows_behind_camera = 0;
@@ -1016,18 +1113,43 @@ export class Assignment2 extends Base_Scene {
     this.drawStars(context, program_state);
     this.pane_below = false;
     this.intersecting = false;
+    let i = 0;
+    let prev_config = configs[0];
     for (let row of rows) {
       this.generateFaces(
-        this.NUM_SIDES,
-        this.PANES_PER_SIDE,
+        configs[i].NUM_SIDES,
+        configs[i].PANES_PER_SIDE,
+        configs[i],
         context,
         program_state,
         model_transform,
-        this.panel_colors[level % this.panel_colors.length],
+        configs[i].LEVEL_COLOR,
         row
       );
+      prev_config = configs[i];
+      if (i < rows.length - 1) {
+        if (
+          configs[i + 1].id != prev_config.id
+        ) {
+          model_transform = model_transform
+            .times(
+              Mat4.translation(
+                -prev_config.PANE_START_X,
+                -prev_config.PANE_START_Y,
+                0
+              )
+            )
+            .times(
+              Mat4.translation(
+                configs[i + 1].PANE_START_X,
+                configs[i + 1].PANE_START_Y,
+                0
+              )
+            );
+        }
+      }
       next_model_transform = model_transform.times(
-        Mat4.translation(0, 0, -this.PANE_DEPTH)
+        Mat4.translation(0, 0, -configs[i].PANE_DEPTH)
       );
       if (model_transform[2][3] >= 10) {
         // console.log(rows_behind_camera)
@@ -1035,12 +1157,21 @@ export class Assignment2 extends Base_Scene {
         new_initial_transform = next_model_transform;
       }
       model_transform = next_model_transform;
+      i++;
     }
     for (let i = 0; i < rows_behind_camera; i++) {
       this.manager.update_row_window(new_initial_transform);
     }
     if (rows_behind_camera == 0)
       this.manager.update_initial_tranform(new_initial_transform);
+    if (this.next_rotation != this.rotation_side) {
+      this.do_rotation(this.next_rotation);
+    }
+    if (this.next_config != -1) {
+      this.current_config = this.next_config;
+      this.manager.update_level_window();
+      // update level here
+    }
     this.draw_ball(context, program_state, 0);
     if (this.TEST_COLLISION_BASIS) {
       this.draw_ball(context, program_state, 1);
@@ -1049,8 +1180,7 @@ export class Assignment2 extends Base_Scene {
       this.draw_ball(context, program_state, 4);
     }
     // this.draw_ball(context, program_state, 5);
-    if (this.next_rotation != this.rotation_side)
-      this.do_rotation(this.next_rotation);
+
     this.prev_t = t;
     // if (t > 3) this.side = 1
   }
