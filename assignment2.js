@@ -211,7 +211,13 @@ class Base_Scene extends Scene {
           texture: new Texture("assets/text.png")
       }),
       test: new Material(new defs.Phong_Shader(), {
-        ambient: .4, diffusivity: .6, color: color(0, 0, 0, 0)
+        ambient: .4, diffusivity: .6, color: color(0, 0, 0, 0)}),
+      player: new Material(new defs.Textured_Phong(), {
+        color: hex_color("#0e030a"),
+        ambient: 1,
+        diffusivity: 1,
+        specularity: 0,
+        texture: new Texture("assets/retro.png", "LINEAR_MIPMAP_LINEAR")
       })
     };
     // The white material and basic shader are used for drawing the outline.
@@ -842,14 +848,15 @@ export class Assignment2 extends Base_Scene {
             //   //  Mat4.rotation(-program_state.animation_time / 120, 1, 0, 0)
           );
 
-    this.shapes.skull.draw(
+    this.shapes.sphere.draw(
       context,
       program_state,
       rotating_sphere,
-      this.materials.plastic.override({
-        color: color(1, 1, 1, 1),
-        ambient: 0.2,
-      })
+      // this.materials.plastic.override({
+      //   // color: color(1/, 1, 1, 1),
+      //   ambient: 0.2,
+      // })
+      this.materials.player
     );
     // DRAW THE SCORE TEXT
     let level_string = "Level: " + this.current_config.id;
@@ -905,7 +912,7 @@ export class Assignment2 extends Base_Scene {
             ) //.times(
             //   //  Mat4.rotation(-program_state.animation_time / 120, 1, 0, 0)
           );
-    funny_orbit = funny_orbit.times(Mat4.scale(5, 5, 5)).times(Mat4.translation(0, 0, 0));
+    funny_orbit = funny_orbit.times(Mat4.scale(5, 5, 5)).times(Mat4.translation(0.6, 0.5, 0));
     this.shapes.cube.draw(context, program_state, funny_orbit, this.materials.test);
     for (let i = 0; i < 3; i++) {
       for (let j = 0; j < 2; j++) {             // Find the matrix for a basis located along one of the cube's sides:
@@ -917,7 +924,7 @@ export class Assignment2 extends Base_Scene {
             let multi_line_string = level_string;
             this.shapes.text.set_string(multi_line_string, context.context);
             this.shapes.text.draw(context, program_state, funny_orbit.times(cube_side)
-                    .times(Mat4.scale(.08, .08, .08)), this.materials.text_image);
+                    .times(Mat4.scale(.06, .06, .06)), this.materials.text_image);
           }
       }
     }
