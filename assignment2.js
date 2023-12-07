@@ -189,6 +189,13 @@ class Base_Scene extends Scene {
         color: hex_color("#ffffff"),
         texture: new Texture("assets/grid.png", "LINEAR_MIPMAP_LINEAR"),
       }),
+      falling: new Material(new defs.Textured_Phong(), {
+        ambient: 0.3,
+        diffusivity: 0.1,
+        specularity: 0,
+        color: hex_color("#a8a29e", 1),
+        texture: new Texture("assets/grid.png", "LINEAR_MIPMAP_LINEAR"),
+      }),
     };
     // The white material and basic shader are used for drawing the outline.
     this.white = new Material(new defs.Basic_Shader());
@@ -224,8 +231,8 @@ class Base_Scene extends Scene {
     }
 
     this.panel_colors = [
-      color(240 / 255, 77 / 255, 77 / 255, 0.8),
-      color(250 / 255, 146 / 255, 42 / 255, 0.8),
+      hex_color("#ef4444", 0.8),
+      hex_color("#ea580c", 0.8),
       color(243 / 255, 255 / 255, 79 / 255, 0.8),
       color(0.1, 0.7, 0.5, 1),
       color(79 / 255, 176 / 255, 255 / 255, 0.8),
@@ -312,8 +319,8 @@ class Base_Scene extends Scene {
     const configs = [];
 
     const starting_configs = [
-      new Level(2, 6, this.panel_colors[0], 7, 1, 6, 0, 0.5),
-      new Level(3, 5, this.panel_colors[1], 8, 1, 6, 1, 0.8),
+      new Level(2, 6, this.panel_colors[0], 7, 1, 3, 0, 0.5),
+      new Level(3, 5, this.panel_colors[1], 8, 1, 3, 1, 0.8),
     ];
 
     for (let i = 0; i < 2; i++) {
@@ -388,7 +395,7 @@ class Base_Scene extends Scene {
     this.jump_end = 0;
     this.y_velocity = 0;
     this.y_acceleration = 0;
-    this.gravity_acceleration = -22;
+    this.gravity_acceleration = -28;
     this.jump_height = 3.0;
     this.jump_velocity = 18;
 
@@ -1001,6 +1008,16 @@ export class Assignment2 extends Base_Scene {
           0
         );
 
+        const mat =
+          row[i * panes_per_side + j] >= 3
+            ? this.materials.falling
+            : this.materials.plastic.override({
+                color:
+                  row[i * panes_per_side + j] >= 3
+                    ? this.falling_tile_color
+                    : ring_color,
+              });
+
         if (row[i * panes_per_side + j]) {
           this.shapes.pane.draw(
             context,
@@ -1012,14 +1029,7 @@ export class Assignment2 extends Base_Scene {
                 Mat4.scale(config.PANE_WIDTH / 2, 1, config.PANE_DEPTH / 2)
               )
               .times(Mat4.rotation(Math.PI / 2, 1, 0, 0)),
-
-            // this.materials.plastic.override({ color: color(0.1*(i+1),0.1*(i+1),0.1*(i+1),1) })
-            this.materials.plastic.override({
-              color:
-                row[i * panes_per_side + j] >= 3
-                  ? this.panel_colors[1]
-                  : ring_color,
-            })
+            mat
           );
 
           let intersecting_pane = this.is_colliding(
