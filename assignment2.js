@@ -195,8 +195,8 @@ class Base_Scene extends Scene {
         ambient: 0.3,
         diffusivity: 0.1,
         specularity: 0,
-        color: hex_color("#a8a29e", 1),
-        texture: new Texture("assets/grid.png", "LINEAR_MIPMAP_LINEAR"),
+        color: hex_color("#ffffff", 1),
+        texture: new Texture("assets/stone.png", "LINEAR_MIPMAP_LINEAR"),
       }),
     };
     // The white material and basic shader are used for drawing the outline.
