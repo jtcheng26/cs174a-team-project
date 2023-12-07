@@ -191,6 +191,13 @@ class Base_Scene extends Scene {
         color: hex_color("#ffffff"),
         texture: new Texture("assets/grid.png", "LINEAR_MIPMAP_LINEAR"),
       }),
+      falling: new Material(new defs.Textured_Phong(), {
+        ambient: 0.3,
+        diffusivity: 0.1,
+        specularity: 0,
+        color: hex_color("#a8a29e", 1),
+        texture: new Texture("assets/grid.png", "LINEAR_MIPMAP_LINEAR"),
+      }),
     };
     // The white material and basic shader are used for drawing the outline.
     this.white = new Material(new defs.Basic_Shader());
@@ -226,8 +233,8 @@ class Base_Scene extends Scene {
     }
 
     this.panel_colors = [
-      color(240 / 255, 77 / 255, 77 / 255, 0.8),
-      color(250 / 255, 146 / 255, 42 / 255, 0.8),
+      hex_color("#ef4444", 0.8),
+      hex_color("#ea580c", 0.8),
       color(243 / 255, 255 / 255, 79 / 255, 0.8),
       color(0.1, 0.7, 0.5, 1),
       color(79 / 255, 176 / 255, 255 / 255, 0.8),
@@ -293,9 +300,9 @@ class Base_Scene extends Scene {
     this.jump_end = 0;
     this.y_velocity = 0;
     this.y_acceleration = 0;
-    this.gravity_acceleration = -54;
+    this.gravity_acceleration = -28;
     this.jump_height = 3.0;
-    this.jump_velocity = 26;
+    this.jump_velocity = 18;
 
     this.gravity = 7000;
 
@@ -314,8 +321,8 @@ class Base_Scene extends Scene {
     const configs = [];
 
     const starting_configs = [
-      new Level(2, 6, this.panel_colors[0], 7, 1, 3, 0),
-      new Level(3, 5, this.panel_colors[1], 8, 1, 3, 1),
+      new Level(2, 6, this.panel_colors[0], 7, 1, 3, 0, 0.5),
+      new Level(3, 5, this.panel_colors[1], 8, 1, 3, 1, 0.8),
     ];
 
     for (let i = 0; i < 2; i++) {
@@ -324,8 +331,11 @@ class Base_Scene extends Scene {
       for (let k = 0; k < 25; k++) {
         let row = [];
         for (let j = 0; j < config.NUM_SIDES * config.PANES_PER_SIDE; j++) {
+          let r = Math.random();
           if (k < 6) row.push(1);
-          else row.push(Math.random() < 0.5);
+          else if (r < 0.5) row.push(1);
+          else if (r < 0.7) row.push(3);
+          else row.push(0);
         }
         level.push(row);
       }
@@ -387,9 +397,9 @@ class Base_Scene extends Scene {
     this.jump_end = 0;
     this.y_velocity = 0;
     this.y_acceleration = 0;
-    this.gravity_acceleration = -54;
+    this.gravity_acceleration = -28;
     this.jump_height = 3.0;
-    this.jump_velocity = 26;
+    this.jump_velocity = 18;
 
     this.gravity = 7000;
 
@@ -458,13 +468,26 @@ class Base_Scene extends Scene {
     ];
   }
 
-  arb_rotation(side, config) {
-    const rotated = Mat4.rotation(side * config.ROTATION_ANGLE, 0, 0, 1);
-    return rotated;
+  arb_rotation(side, NUM_SIDES) {
+    if (!this.rot_cache) {
+      this.rot_cache = {};
+    }
+    if (!(NUM_SIDES in this.rot_cache)) this.rot_cache[NUM_SIDES] = {};
+    if (side in this.rot_cache[NUM_SIDES])
+      return this.rot_cache[NUM_SIDES][side];
+    const rotated = Mat4.rotation((side * 2 * Math.PI) / NUM_SIDES, 0, 0, 1);
+    return (this.rot_cache[NUM_SIDES][side] = rotated);
   }
 
   rotation(side) {
     // const center_translation = Mat4.translation(0, 0, 0);
+    if (!this.rot_cache) {
+      this.rot_cache = {};
+    }
+    if (!(this.current_config.NUM_SIDES in this.rot_cache))
+      this.rot_cache[this.current_config.NUM_SIDES] = {};
+    if (side in this.rot_cache[this.current_config.NUM_SIDES])
+      return this.rot_cache[this.current_config.NUM_SIDES][side];
     const rotated = Mat4.rotation(
       side * this.current_config.ROTATION_ANGLE,
       0,
@@ -479,7 +502,7 @@ class Base_Scene extends Scene {
     // this.sphere_transform = this.sphere_transform.times(Mat4.rotation(-side * (Math.PI / 3), 0, 0, 1))
     // console.log(this.sphere_transform)
 
-    return rotated;
+    return (this.rot_cache[this.current_config.NUM_SIDES][side] = rotated);
   }
 }
 
@@ -499,7 +522,7 @@ export class Assignment2 extends Base_Scene {
 
   make_control_panel() {
     this.key_triggered_button("Jump", ["k"], () => {
-      if (this.is_jumping || this.y_velocity != 0) {
+      if (this.is_jumping || !this.intersecting) {
         return;
       } else {
         this.jump_begin = this.mili_t;
@@ -509,7 +532,7 @@ export class Assignment2 extends Base_Scene {
         this.camera_origin = this.camera_location;
         this.y_velocity = this.jump_velocity;
         this.y_acceleration = this.gravity_acceleration;
-        this.intersecting = false;
+        this.intersecting = 0;
       }
     });
 
@@ -567,7 +590,10 @@ export class Assignment2 extends Base_Scene {
         ? 0
         : this.gravity_acceleration;
     else {
-      this.y_velocity = 0;
+      if (this.intersecting == 2 && !this.is_falling)
+        this.y_velocity =
+          -this.current_config.FALLING_TILE_VELOCITY / this.SPHERE_RADIUS;
+      else this.y_velocity = 0;
       this.y_acceleration = 0;
     }
     if (this.prev_t == -1) this.prev_t = 0;
@@ -576,7 +602,8 @@ export class Assignment2 extends Base_Scene {
     // console.log((this.y_velocity * dt) / 1000);
 
     let dy = (this.y_velocity * dt) / 1000;
-    if (this.is_jumping) dy = Math.max(dy, 1.2 * this.EPSILON);
+    if (this.is_jumping) dy = Math.max(dy, 10 * this.EPSILON);
+    this.is_falling = false;
     // if (
     //   this.sphere_transform.times(vec4(0, 0, 0, 1))[1] -
     //     this.SPHERE_RADIUS -
@@ -858,7 +885,15 @@ export class Assignment2 extends Base_Scene {
   //   return x_in_bound && y_in_bound && z_in_bound;
   // }
 
-  is_colliding(model_transform, pane_transform, config, i, j, print = false) {
+  is_colliding(
+    model_transform,
+    pane_transform,
+    config,
+    fall_mat,
+    i,
+    j,
+    print = false
+  ) {
     let z = model_transform
       .times(Mat4.scale(config.PANE_WIDTH / 2, 1, config.PANE_DEPTH / 2))
       .times(vec4(0, 0, 0, 1))[2];
@@ -875,10 +910,10 @@ export class Assignment2 extends Base_Scene {
       .times(vec4(0, 0, 0, 1));
 
     let basis = Mat4.identity()
-
+      .times(fall_mat)
       .times(Mat4.translation(-new_pos[0], -new_pos[1], 0))
       .times(
-        Mat4.rotation(angle, 0, 0, 1).times(
+        this.arb_rotation(i, config.NUM_SIDES).times(
           Mat4.translation(new_pos[0], new_pos[1], 0)
         )
       )
@@ -942,7 +977,8 @@ export class Assignment2 extends Base_Scene {
     program_state,
     model_transform,
     ring_color,
-    row
+    row,
+    row_i
   ) {
     const blue = color(
       255 * Math.random(),
@@ -950,51 +986,96 @@ export class Assignment2 extends Base_Scene {
       255 * Math.random(),
       1
     );
-    let rotation_angle = (2 * Math.PI) / num_sides;
     let curr_transform = Mat4.identity();
     for (let i = 0; i < num_sides; i++) {
+      const grav_vector = this.arb_rotation(i, num_sides).times(
+        vec4(0, 1, 0, 1)
+      );
       for (let j = 0; j < panes_per_side; j++) {
         // if (i == 1 && j == 0 && this.prev_t == 0) {
         //   this.is_colliding(model_transform, curr_transform);
         // }
+        let off_t = row[i * panes_per_side + j] - 3;
+
+        let offset =
+          off_t <= 0 || program_state.animation_time / 1000 - off_t <= 0
+            ? 0
+            : -config.FALLING_TILE_VELOCITY *
+              (program_state.animation_time / 1000 - off_t);
+
+        // if (row[i * panes_per_side + j] > 3) console.log(off_t);
+
+        const fall_mat = Mat4.translation(
+          offset * grav_vector[0],
+          offset * grav_vector[1],
+          0
+        );
+
+        const mat =
+          row[i * panes_per_side + j] >= 3
+            ? this.materials.falling
+            : this.materials.plastic.override({
+                color:
+                  row[i * panes_per_side + j] >= 3
+                    ? this.falling_tile_color
+                    : ring_color,
+              });
+
         if (row[i * panes_per_side + j]) {
           this.shapes.pane.draw(
             context,
             program_state,
             model_transform
+              .times(fall_mat)
               .times(curr_transform)
               .times(
                 Mat4.scale(config.PANE_WIDTH / 2, 1, config.PANE_DEPTH / 2)
               )
               .times(Mat4.rotation(Math.PI / 2, 1, 0, 0)),
-            // this.materials.plastic.override({ color: color(0.1*(i+1),0.1*(i+1),0.1*(i+1),1) })
-            this.materials.plastic.override({ color: ring_color })
+            mat
           );
 
           let intersecting_pane = this.is_colliding(
             model_transform,
             curr_transform,
             config,
+            fall_mat,
             i,
             j,
             true
           );
+          // if (row[i * panes_per_side + j] > 3)
+          //   this.manager.trigger_falling_pane(
+          //     row_i,
+          //     i * panes_per_side + j,
+          //     program_state.animation_time / 1000 - this.prev_t
+          //   );
           if (intersecting_pane) {
             // console.log("intersect", i, j);
-            this.intersecting = true;
-            if (
-              this.current_config.id != config.id
-            ) {
+            if (row[i * panes_per_side + j] == 3) {
+              this.manager.trigger_falling_pane(
+                row_i,
+                i * panes_per_side + j,
+                program_state.animation_time / 1000
+              );
+              this.is_falling = true;
+            }
+            // else if (row[i * panes_per_side + j] > 3) {
+            //   this.manager.fall_pane(i, j, program_state.animation_time / 1000 - this.prev_t);
+            // }
+
+            if (this.current_config.id != config.id) {
               this.next_rotation = i;
               this.next_config = config;
             } else {
               // check all right and left rotations
-              if (this.prev_pressed == 1) {
+              if (!this.intersecting || this.prev_pressed == 1) {
                 for (let k = 1; k < num_sides / 2; k++) {
                   if (i == (this.rotation_side + k) % num_sides)
                     this.next_rotation = i;
                 }
-              } else if (this.prev_pressed == 0) {
+              }
+              if (!this.intersecting || this.prev_pressed == 0) {
                 for (let k = 1; k < num_sides / 2; k++) {
                   if (i == (this.rotation_side - k + num_sides) % num_sides) {
                     this.next_rotation = i;
@@ -1002,6 +1083,12 @@ export class Assignment2 extends Base_Scene {
                 }
               }
             }
+            this.intersecting =
+              this.intersecting == 1
+                ? 1
+                : row[i * panes_per_side + j] >= 3
+                ? 2
+                : 1;
             // if (i != this.rotation_side) {
             //   if (this.prev_pressed == 1 && i > this.rotation_side)
             //     this.next_rotation = i;
@@ -1035,7 +1122,7 @@ export class Assignment2 extends Base_Scene {
       }
       curr_transform = curr_transform
         .times(Mat4.translation(-config.PANE_WIDTH / 2, 0, 0))
-        .times(Mat4.rotation(rotation_angle, 0, 0, 1))
+        .times(this.arb_rotation(1, config.NUM_SIDES))
         .times(Mat4.translation(config.PANE_WIDTH / 2, 0, 0));
 
       // model_transform = model_transform.times(Mat4.translation(1, 0, 0));
@@ -1127,13 +1214,12 @@ export class Assignment2 extends Base_Scene {
         program_state,
         model_transform,
         configs[i].LEVEL_COLOR,
-        row
+        row,
+        i
       );
       prev_config = configs[i];
       if (i < rows.length - 1) {
-        if (
-          configs[i + 1].id != prev_config.id
-        ) {
+        if (configs[i + 1].id != prev_config.id) {
           model_transform = model_transform
             .times(
               Mat4.translation(
@@ -1175,6 +1261,7 @@ export class Assignment2 extends Base_Scene {
       this.manager.update_level_window();
       // update level here
     }
+    // console.log(this.intersecting);
     this.draw_ball(context, program_state, 0);
     if (this.TEST_COLLISION_BASIS) {
       this.draw_ball(context, program_state, 1);
