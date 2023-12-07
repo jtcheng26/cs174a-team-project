@@ -9,7 +9,8 @@ export class Level {
     SPEED,
     PANE_WIDTH,
     PANE_DEPTH,
-    id
+    id,
+    FALLING_VELOCITY = 1
   ) {
     this.LEVEL_COLOR = COLOR;
     this.LEVEL_SPEED = SPEED;
@@ -27,6 +28,7 @@ export class Level {
 
     this.PANE_START_X = -this.PANE_WIDTH * ((this.PANES_PER_SIDE - 1) / 2);
     this.PANE_START_Y = -this.TUNNEL_HEIGHT / 2;
+    this.FALLING_TILE_VELOCITY = FALLING_VELOCITY;
     this.id = id;
   }
 }
@@ -87,7 +89,7 @@ export class GameManager {
     }
 
     this.possible_configs = [
-      [2, 4, 2], // PANES_PER_SIDE, NUM_SIDES, PANE_WIDTH
+      [4, 4, 1], // PANES_PER_SIDE, NUM_SIDES, PANE_WIDTH
       [1, 4, 3],
       [3, 6, 1],
       [2, 6, 1],
@@ -143,11 +145,11 @@ export class GameManager {
       this.possible_configs[
         Math.floor(Math.random() * this.possible_configs.length)
       ];
-    const take = Math.floor(Math.random() * (this.panel_colors.length - 1))
+    const take = Math.floor(Math.random() * (this.panel_colors.length - 1));
     const color = this.panel_colors[take];
-    this.panel_colors[take] = this.panel_colors[this.panel_colors.length - 1]
-    this.panel_colors[this.panel_colors.length - 1] = color
-    
+    this.panel_colors[take] = this.panel_colors[this.panel_colors.length - 1];
+    this.panel_colors[this.panel_colors.length - 1] = color;
+
     const config = new Level(
       shape[0],
       shape[1],
@@ -155,11 +157,12 @@ export class GameManager {
       Math.min(MAX_SPEED, 7 + this.id),
       shape[2],
       3,
-      this.id
+      this.id,
+      Math.max(Math.min(MAX_SPEED, 7 + this.id), - 9, 0.5)
     );
     this.id++;
     const level = [];
-    const level_prob = 0.3 + Math.random() * 0.4
+    const level_prob = 0.3 + Math.random() * 0.4;
     const LEVEL_LENGTH = Math.min(MAX_SPEED, 7 + this.id) * 3;
     for (let k = 0; k < LEVEL_LENGTH; k++) {
       let row = [];
@@ -173,6 +176,20 @@ export class GameManager {
     level.push(new Array(config.NUM_SIDES * config.PANES_PER_SIDE).fill(1));
     level.push(new Array(config.NUM_SIDES * config.PANES_PER_SIDE).fill(0));
     return [level, config];
+  }
+
+  trigger_falling_pane(i, j, t) {
+    const num_sides = this.levels_deque[i].NUM_SIDES;
+    this.rows_deque[i][j] += t;
+    // last row of level will always be empty
+    if (this.rows_deque[i + 1][j] == 3)
+      this.trigger_falling_pane(i + 1, j, t + 1 / 20);
+    if (this.rows_deque[i][(j - 1 + num_sides) % num_sides] == 3) {
+      this.trigger_falling_pane(i, (j - 1 + num_sides) % num_sides, t + 1 / 20);
+    }
+    if (this.rows_deque[i][(j + 1) % num_sides] == 3) {
+      this.trigger_falling_pane(i, (j + 1) % num_sides, t + 1 / 20);
+    }
   }
 
   update_row_size(n) {
@@ -221,6 +238,12 @@ export class GameManager {
     for (let config of this.configs) {
       if (config.id == id) break;
       start_j += 1;
+    }
+    for (let i = 0; i < this.levels.length; i++) {
+      for (let j = 0; j < this.levels[i].length; j++) {
+        for (let k = 0; k < this.levels[i][j].length; k++)
+          if (this.levels[i][j][k] > 3) this.levels[i][j][k] = 3;
+      }
     }
     for (let j = start_j; j < this.levels.length; j++) {
       let take = Math.min(i, this.levels[j].length);
