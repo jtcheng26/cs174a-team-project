@@ -179,7 +179,7 @@ class Base_Scene extends Scene {
       // sphere: new defs.Axis_Arrows(),
       sphere: new defs.Subdivision_Sphere(4),
       star: new defs.Subdivision_Sphere(1),
-      skull: new Shape_From_File("assets/body.obj")
+      skull: new Shape_From_File("assets/body.obj"),
     };
 
     // *** Materials
@@ -189,7 +189,7 @@ class Base_Scene extends Scene {
         diffusivity: 0.7,
         specularity: 0,
         color: hex_color("#ffffff"),
-        texture: new Texture("assets/grid.png", "LINEAR_MIPMAP_LINEAR"),
+        texture: new Texture("assets/retro.png", "LINEAR_MIPMAP_LINEAR"),
       }),
       falling: new Material(new defs.Textured_Phong(), {
         ambient: 0.3,
@@ -233,8 +233,8 @@ class Base_Scene extends Scene {
     }
 
     this.panel_colors = [
-      hex_color("#ef4444", 0.8),
-      hex_color("#ea580c", 0.8),
+      hex_color("#ef4444", 0.9),
+      hex_color("#f97316", 0.9),
       color(243 / 255, 255 / 255, 79 / 255, 0.8),
       color(0.1, 0.7, 0.5, 1),
       color(79 / 255, 176 / 255, 255 / 255, 0.8),
@@ -782,6 +782,13 @@ export class Assignment2 extends Base_Scene {
             right_vector[0],
             right_vector[1],
             0
+          ).times(
+            Mat4.rotation(
+              this.rotation_side * this.current_config.ROTATION_ANGLE,
+              0,
+              0,
+              1
+            )
           )
           // Mat4.identity()
         )

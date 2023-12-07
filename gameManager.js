@@ -101,16 +101,18 @@ export class GameManager {
       [1, 12, 1],
     ];
 
+    const opacity = 0.9
+
     this.panel_colors = [
-      hex_color("#ef4444", 0.8),
-      hex_color("#f97316", 0.8),
-      hex_color("#14b8a6", 0.8),
-      hex_color("#eab308", 0.8),
-      hex_color("#84cc16", 0.8),
-      hex_color("#0ea5e9", 0.8),
-      hex_color("#3b82f6", 0.8),
-      hex_color("#8b5cf6", 0.8),
-      hex_color("#ec4899", 0.8),
+      hex_color("#ef4444", opacity),
+      hex_color("#fb923c", opacity),
+      hex_color("#14b8a6", opacity),
+      hex_color("#eab308", opacity),
+      hex_color("#84cc16", opacity),
+      hex_color("#0ea5e9", opacity),
+      hex_color("#3b82f6", opacity),
+      hex_color("#8b5cf6", opacity),
+      hex_color("#f472b6", opacity),
     ];
 
     // making new levels
@@ -142,7 +144,7 @@ export class GameManager {
   }
 
   generate_new_level() {
-    const MAX_SPEED = 15;
+    const MAX_SPEED = 13;
     const shape =
       this.possible_configs[
         Math.floor(Math.random() * this.possible_configs.length)
