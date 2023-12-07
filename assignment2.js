@@ -1,6 +1,7 @@
 import { defs, tiny } from "./examples/common.js";
 
 import { GameManager, stringToMatrix, Level } from "./gameManager.js";
+import { Shape_From_File } from "./examples/obj-file-demo.js";
 
 const {
   Vector,
@@ -178,6 +179,7 @@ class Base_Scene extends Scene {
       // sphere: new defs.Axis_Arrows(),
       sphere: new defs.Subdivision_Sphere(4),
       star: new defs.Subdivision_Sphere(1),
+      skull: new Shape_From_File("assets/body.obj")
     };
 
     // *** Materials
@@ -754,6 +756,7 @@ export class Assignment2 extends Base_Scene {
             right_vector[1],
             0
           )
+          // Mat4.identity()
         )
       : this.sphere_transform
           .times(
@@ -790,7 +793,7 @@ export class Assignment2 extends Base_Scene {
             //   //  Mat4.rotation(-program_state.animation_time / 120, 1, 0, 0)
           );
 
-    this.shapes.sphere.draw(
+    this.shapes.skull.draw(
       context,
       program_state,
       rotating_sphere,
