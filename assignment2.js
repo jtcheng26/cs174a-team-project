@@ -2,6 +2,7 @@ import { defs, tiny } from "./examples/common.js";
 
 import { GameManager, stringToMatrix, Level } from "./gameManager.js";
 import { Shape_From_File } from "./examples/obj-file-demo.js";
+import { Text_Demo, Text_Line } from "./examples/text-demo.js";
 
 const {
   Vector,
@@ -180,6 +181,7 @@ class Base_Scene extends Scene {
       sphere: new defs.Subdivision_Sphere(4),
       star: new defs.Subdivision_Sphere(1),
       skull: new Shape_From_File("assets/body.obj"),
+      text: new Text_Line(35)
     };
 
     // *** Materials
@@ -198,6 +200,25 @@ class Base_Scene extends Scene {
         color: hex_color("#ffffff", 1),
         texture: new Texture("assets/stone.png", "LINEAR_MIPMAP_LINEAR"),
       }),
+      level_color: new Material(new defs.Textured_Phong(), {
+        ambient: 0,
+        diffusivity: 0,
+        specularity: 0,
+        color: color(1, 1, 1, 1),
+      }),
+      text_image: new Material(new defs.Textured_Phong(), {
+          ambient: 1, diffusivity: 0, specularity: 0,
+          texture: new Texture("assets/text.png")
+      }),
+      test: new Material(new defs.Phong_Shader(), {
+        ambient: .4, diffusivity: .6, color: color(0, 0, 0, 0)}),
+      player: new Material(new defs.Textured_Phong(), {
+        color: hex_color("#0e030a"),
+        ambient: 1,
+        diffusivity: 1,
+        specularity: 0,
+        texture: new Texture("assets/retro.png", "LINEAR_MIPMAP_LINEAR")
+      })
     };
     // The white material and basic shader are used for drawing the outline.
     this.white = new Material(new defs.Basic_Shader());
@@ -827,15 +848,86 @@ export class Assignment2 extends Base_Scene {
             //   //  Mat4.rotation(-program_state.animation_time / 120, 1, 0, 0)
           );
 
-    this.shapes.skull.draw(
+    this.shapes.sphere.draw(
       context,
       program_state,
       rotating_sphere,
-      this.materials.plastic.override({
-        color: color(1, 1, 1, 1),
-        ambient: 0.2,
-      })
+      // this.materials.plastic.override({
+      //   // color: color(1/, 1, 1, 1),
+      //   ambient: 0.2,
+      // })
+      this.materials.player
     );
+    // DRAW THE SCORE TEXT
+    let level_string = "Level: " + this.current_config.id;
+    let funny_orbit = Mat4.identity();
+    funny_orbit = !this.TEST_COLLISION_BASIS
+      ? this.sphere_transform.times(
+          Mat4.rotation(
+            0,
+            right_vector[0],
+            right_vector[1],
+            0
+          ).times(
+            Mat4.rotation(
+              this.rotation_side * this.current_config.ROTATION_ANGLE,
+              0,
+              0,
+              1
+            )
+          )
+          // Mat4.identity()
+        )
+      : this.sphere_transform
+          .times(
+            Mat4.scale(
+              1 / this.SPHERE_RADIUS,
+              1 / this.SPHERE_RADIUS,
+              1 / this.SPHERE_RADIUS
+            )
+          )
+          .times(
+            Mat4.inverse(
+              Mat4.identity()
+
+                .times(Mat4.translation(-new_pos[0], -new_pos[1], -new_pos[2]))
+                .times(
+                  this.rotation(i).times(
+                    Mat4.translation(new_pos[0], new_pos[1], new_pos[2])
+                  )
+                )
+                .times(
+                  Mat4.translation(
+                    j * this.current_config.PANE_WIDTH,
+                    0, //  -j * this.PANE_WIDTH,
+                    0
+                  )
+                )
+            ).times(
+              Mat4.scale(
+                this.SPHERE_RADIUS,
+                this.SPHERE_RADIUS,
+                this.SPHERE_RADIUS
+              )
+            ) //.times(
+            //   //  Mat4.rotation(-program_state.animation_time / 120, 1, 0, 0)
+          );
+    funny_orbit = funny_orbit.times(Mat4.scale(5, 5, 5)).times(Mat4.translation(0.6, 0.5, 0));
+    this.shapes.cube.draw(context, program_state, funny_orbit, this.materials.test);
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 2; j++) {             // Find the matrix for a basis located along one of the cube's sides:
+          if (i == 2 && j == 0) {
+            let cube_side = Mat4.rotation(i == 0 ? Math.PI / 2 : 0, 1, 0, 0)
+                .times(Mat4.rotation(Math.PI * j - (i == 1 ? Math.PI / 2 : 0), 0, 1, 0))
+                .times(Mat4.translation(-.9, .9, 1.01));
+
+            let multi_line_string = level_string;
+            this.shapes.text.set_string(multi_line_string, context.context);
+            this.shapes.text.draw(context, program_state, funny_orbit.times(cube_side)
+                    .times(Mat4.scale(.06, .06, .06)), this.materials.text_image);
+          }
+      }
+    }
   }
 
   do_rotation(side) {
@@ -1279,6 +1371,5 @@ export class Assignment2 extends Base_Scene {
     // this.draw_ball(context, program_state, 5);
 
     this.prev_t = t;
-    // if (t > 3) this.side = 1
   }
 }
