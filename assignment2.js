@@ -303,6 +303,8 @@ class Base_Scene extends Scene {
 
     this.intersecting = true;
 
+    this.deaths = 0
+
     //Need globally stored program time for smooth ball transitions
     this.mili_t = 0;
     this.mark_begin = 0;
@@ -727,6 +729,7 @@ export class Assignment2 extends Base_Scene {
 
     let pos_sphere = this.sphere_transform.times(vec4(0, 0, 0, 1));
     if (pos_sphere[0] * grav_vector[0] + pos_sphere[1] * grav_vector[1] < -5) {
+      this.deaths += 0.5
       this.reset_level(program_state);
       return;
     }
@@ -862,7 +865,7 @@ export class Assignment2 extends Base_Scene {
             ) //.times(
             //   //  Mat4.rotation(-program_state.animation_time / 120, 1, 0, 0)
           );
-
+    const player_col = this.current_config.LEVEL_COLOR
     this.shapes.sphere.draw(
       context,
       program_state,
@@ -871,14 +874,22 @@ export class Assignment2 extends Base_Scene {
       //   // color: color(1/, 1, 1, 1),
       //   ambient: 0.2,
       // })
-      this.materials.player
+      this.materials.player.override({
+        color: this.current_config.LEVEL_COLOR
+      })
     );
+    // console.log(this.current_config.LEVEL_COLOR)
     // DRAW THE SCORE TEXT
     let level_string = "Level: " + this.current_config.id;
-    let funny_orbit = Mat4.identity();
-    funny_orbit = !this.TEST_COLLISION_BASIS
-      ? this.sphere_transform.times(
-          Mat4.rotation(0, right_vector[0], right_vector[1], 0).times(
+    let funny_orbit = Mat4.identity()
+                      .times(
+                        Mat4.scale(
+                          this.SPHERE_RADIUS,
+                          this.SPHERE_RADIUS,
+                          this.SPHERE_RADIUS
+                          )
+                      );
+    funny_orbit = funny_orbit.times(
             Mat4.rotation(
               this.rotation_side * this.current_config.ROTATION_ANGLE,
               0,
@@ -886,70 +897,28 @@ export class Assignment2 extends Base_Scene {
               1
             )
           )
-          // Mat4.identity()
-        )
-      : this.sphere_transform
-          .times(
-            Mat4.scale(
-              1 / this.SPHERE_RADIUS,
-              1 / this.SPHERE_RADIUS,
-              1 / this.SPHERE_RADIUS
-            )
-          )
-          .times(
-            Mat4.inverse(
-              Mat4.identity()
+        
 
-                .times(Mat4.translation(-new_pos[0], -new_pos[1], -new_pos[2]))
-                .times(
-                  this.rotation(i).times(
-                    Mat4.translation(new_pos[0], new_pos[1], new_pos[2])
-                  )
-                )
-                .times(
-                  Mat4.translation(
-                    j * this.current_config.PANE_WIDTH,
-                    0, //  -j * this.PANE_WIDTH,
-                    0
-                  )
-                )
-            ).times(
-              Mat4.scale(
-                this.SPHERE_RADIUS,
-                this.SPHERE_RADIUS,
-                this.SPHERE_RADIUS
-              )
-            ) //.times(
-            //   //  Mat4.rotation(-program_state.animation_time / 120, 1, 0, 0)
-          );
-    funny_orbit = funny_orbit
-      .times(Mat4.scale(5, 5, 5))
-      .times(Mat4.translation(0.6, 0.5, 0));
-    this.shapes.cube.draw(
-      context,
-      program_state,
-      funny_orbit,
-      this.materials.test
-    );
+    funny_orbit = funny_orbit.times(Mat4.scale(5, 5, 5)).times(Mat4.translation(0.1, -.2, -3));
+    this.shapes.cube.draw(context, program_state, funny_orbit, this.materials.test);
     for (let i = 0; i < 3; i++) {
-      for (let j = 0; j < 2; j++) {
-        // Find the matrix for a basis located along one of the cube's sides:
-        if (i == 2 && j == 0) {
-          let cube_side = Mat4.rotation(i == 0 ? Math.PI / 2 : 0, 1, 0, 0)
-            .times(
-              Mat4.rotation(Math.PI * j - (i == 1 ? Math.PI / 2 : 0), 0, 1, 0)
-            )
-            .times(Mat4.translation(-0.9, 0.9, 1.01));
+      for (let j = 0; j < 2; j++) {             // Find the matrix for a basis located along one of the cube's sides:
+          if (i == 2 && j == 0) {
+            let cube_side = Mat4.rotation(i == 0 ? Math.PI / 2 : 0, 1, 0, 0)
+                .times(Mat4.rotation(Math.PI * j - (i == 1 ? Math.PI / 2 : 0), 0, 1, 0))
+                .times(Mat4.translation(-.9, .9, 1.01));
+            let multi_line_string = level_string;
 
-          let multi_line_string = level_string;
-          this.shapes.text.set_string(multi_line_string, context.context);
-          this.shapes.text.draw(
-            context,
-            program_state,
-            funny_orbit.times(cube_side).times(Mat4.scale(0.06, 0.06, 0.06)),
-            this.materials.text_image
-          );
-        }
+            this.shapes.text.set_string("Deaths: " + this.deaths, context.context);
+            this.shapes.text.draw(context, program_state, funny_orbit.times(cube_side)
+                .times(Mat4.scale(.15, .15, .15)).times(Mat4.translation(-.7,0,0)), this.materials.text_image);
+            // Move our basis down a line.
+            cube_side.post_multiply(Mat4.translation(0, .5, 0));
+
+            this.shapes.text.set_string(multi_line_string, context.context);
+            this.shapes.text.draw(context, program_state, funny_orbit.times(cube_side)
+                    .times(Mat4.scale(.15, .15, .15)), this.materials.text_image);
+          }
       }
     }
   }

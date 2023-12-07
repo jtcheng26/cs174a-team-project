@@ -101,7 +101,7 @@ export class GameManager {
       [1, 12, 1],
     ];
 
-    const opacity = 0.9
+    const opacity = 0.6
 
     this.panel_colors = [
       hex_color("#ef4444", opacity),
@@ -150,6 +150,7 @@ export class GameManager {
         Math.floor(Math.random() * this.possible_configs.length)
       ];
     const take = Math.floor(Math.random() * (this.panel_colors.length - 1));
+    this.take = take
     const color = this.panel_colors[take];
     this.panel_colors[take] = this.panel_colors[this.panel_colors.length - 1];
     this.panel_colors[this.panel_colors.length - 1] = color;
