@@ -1,12 +1,27 @@
-import {defs, tiny} from './examples/common.js';
-import { Obj_File_Demo } from './examples/obj-file-demo.js';
-import {Transforms_Sandbox} from "./examples/transforms-sandbox.js"
-import {Assignment2} from "./assignment2.js"
-import { Text_Demo } from './examples/text-demo.js';
+import { defs, tiny } from "./examples/common.js";
+import { Obj_File_Demo } from "./examples/obj-file-demo.js";
+import { Transforms_Sandbox } from "./examples/transforms-sandbox.js";
+import { Run174A } from "./run174a.js";
+import { Text_Demo } from "./examples/text-demo.js";
 // Pull these names into this module's scope for convenience:
 const {
-    Vector, Vector3, vec, vec3, vec4, color, Matrix, Mat4, Light, Shape, Material, Shader, Texture, Scene,
-    Canvas_Widget, Code_Widget, Text_Widget
+  Vector,
+  Vector3,
+  vec,
+  vec3,
+  vec4,
+  color,
+  Matrix,
+  Mat4,
+  Light,
+  Shape,
+  Material,
+  Shader,
+  Texture,
+  Scene,
+  Canvas_Widget,
+  Code_Widget,
+  Text_Widget,
 } = tiny;
 
 // Now we have loaded everything in the files tiny-graphics.js, tiny-graphics-widgets.js, and common.js.
@@ -19,14 +34,20 @@ const {
 
 const Minimal_Webgl_Demo = defs.Minimal_Webgl_Demo;
 
-Object.assign(defs,
-            {Transforms_Sandbox}, {Assignment2});
+Object.assign(defs, { Transforms_Sandbox }, { Run174A });
 
 // ******************** End extra step
 
 // (Can define Main_Scene's class here)
 
-const Main_Scene = Assignment2;
+const Main_Scene = Run174A;
 const Additional_Scenes = [];
 
-export {Main_Scene, Additional_Scenes, Canvas_Widget, Code_Widget, Text_Widget, defs}
+export {
+  Main_Scene,
+  Additional_Scenes,
+  Canvas_Widget,
+  Code_Widget,
+  Text_Widget,
+  defs,
+};

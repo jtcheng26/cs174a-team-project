@@ -23,120 +23,6 @@ const {
   Texture,
 } = tiny;
 
-class Cube extends Shape {
-  constructor() {
-    super("position", "normal");
-    // Loop 3 times (for each axis), and inside loop twice (for opposing cube sides):
-    this.arrays.position = Vector3.cast(
-      [-1, -1, -1],
-      [1, -1, -1],
-      [-1, -1, 1],
-      [1, -1, 1],
-      [1, 1, -1],
-      [-1, 1, -1],
-      [1, 1, 1],
-      [-1, 1, 1],
-      [-1, -1, -1],
-      [-1, -1, 1],
-      [-1, 1, -1],
-      [-1, 1, 1],
-      [1, -1, 1],
-      [1, -1, -1],
-      [1, 1, 1],
-      [1, 1, -1],
-      [-1, -1, 1],
-      [1, -1, 1],
-      [-1, 1, 1],
-      [1, 1, 1],
-      [1, -1, -1],
-      [-1, -1, -1],
-      [1, 1, -1],
-      [-1, 1, -1]
-    );
-    this.arrays.normal = Vector3.cast(
-      [0, -1, 0],
-      [0, -1, 0],
-      [0, -1, 0],
-      [0, -1, 0],
-      [0, 1, 0],
-      [0, 1, 0],
-      [0, 1, 0],
-      [0, 1, 0],
-      [-1, 0, 0],
-      [-1, 0, 0],
-      [-1, 0, 0],
-      [-1, 0, 0],
-      [1, 0, 0],
-      [1, 0, 0],
-      [1, 0, 0],
-      [1, 0, 0],
-      [0, 0, 1],
-      [0, 0, 1],
-      [0, 0, 1],
-      [0, 0, 1],
-      [0, 0, -1],
-      [0, 0, -1],
-      [0, 0, -1],
-      [0, 0, -1]
-    );
-    // Arrange the vertices into a square shape in texture space too:
-    this.indices.push(
-      0,
-      1,
-      2,
-      1,
-      3,
-      2,
-      4,
-      5,
-      6,
-      5,
-      7,
-      6,
-      8,
-      9,
-      10,
-      9,
-      11,
-      10,
-      12,
-      13,
-      14,
-      13,
-      15,
-      14,
-      16,
-      17,
-      18,
-      17,
-      19,
-      18,
-      20,
-      21,
-      22,
-      21,
-      23,
-      22
-    );
-  }
-}
-
-class Cube_Outline extends Shape {
-  constructor() {
-    super("position", "color");
-    //  TODO (Requirement 5).
-    // When a set of lines is used in graphics, you should think of the list entries as
-    // broken down into pairs; each pair of vertices will be drawn as a line segment.
-    // Note: since the outline is rendered with Basic_shader, you need to redefine the position and color of each vertex
-  }
-}
-
-class Cube_Single_Strip extends Shape {
-  constructor() {
-    super("position", "normal");
-    // TODO (Requirement 6)
-  }
-}
 
 class Pane extends Shape {
   // **Square** demonstrates two triangles that share vertices.  On any planar surface, the
@@ -176,8 +62,6 @@ class Base_Scene extends Scene {
     this.hover = this.swarm = false;
     // At the beginning of our program, load one of each of these shape definitions onto the GPU.
     this.shapes = {
-      cube: new Cube(),
-      outline: new Cube_Outline(),
       pane: new Pane(),
       // sphere: new defs.Axis_Arrows(),
       sphere: new defs.Subdivision_Sphere(4),
@@ -489,7 +373,7 @@ class Base_Scene extends Scene {
     );
 
     // *** Lights: *** Values of vector or point lights.
-    this.light_position = vec4(0, 0, 0.5,-0.15);
+    this.light_position = vec4(0, 0, 0.5, -0.15);
     // this.light_position = vec4(-0.1, -0.4, 1.2, Math.sin(program_state.animation_time/1000));
     // console.log(Math.sin(program_state.animation_time / 1000))
     program_state.lights = [
@@ -536,7 +420,7 @@ class Base_Scene extends Scene {
   }
 }
 
-export class Assignment2 extends Base_Scene {
+export class Run174A extends Base_Scene {
   /**
    * This Scene object can be added to any display canvas.
    * We isolate that code so it can be experimented with on its own.
@@ -731,9 +615,9 @@ export class Assignment2 extends Base_Scene {
 
     let pos_sphere = this.sphere_transform.times(vec4(0, 0, 0, 1));
     if (pos_sphere[0] * grav_vector[0] + pos_sphere[1] * grav_vector[1] < -5) {
-      this.deaths += 0.5;
+      this.deaths++;
       this.reset_level(program_state);
-      return;
+      return false;
     }
     // console.log(pos_sphere[0], pos_sphere[1], pos_sphere[2])
     // let cam_inv = Mat4.inverse(this.camera_location);
@@ -882,7 +766,7 @@ export class Assignment2 extends Base_Scene {
       //   ambient: 0.2,
       // })
       this.materials.player.override({
-        color: this.current_config.LEVEL_COLOR.times(1).plus(vec4(0,0,0,1)),
+        color: this.current_config.LEVEL_COLOR.times(1).plus(vec4(0, 0, 0, 1)),
       })
     );
     // console.log(this.current_config.LEVEL_COLOR)
@@ -903,12 +787,12 @@ export class Assignment2 extends Base_Scene {
     funny_orbit = funny_orbit
       .times(Mat4.scale(5, 5, 5))
       .times(Mat4.translation(0.1, -0.2, -3));
-    this.shapes.cube.draw(
-      context,
-      program_state,
-      funny_orbit,
-      this.materials.test
-    );
+    // this.shapes.cube.draw(
+    //   context,
+    //   program_state,
+    //   funny_orbit,
+    //   this.materials.test
+    // );
     for (let i = 0; i < 3; i++) {
       for (let j = 0; j < 2; j++) {
         // Find the matrix for a basis located along one of the cube's sides:
@@ -946,6 +830,8 @@ export class Assignment2 extends Base_Scene {
         }
       }
     }
+
+    return true;
   }
 
   do_rotation(side) {
@@ -1097,12 +983,7 @@ export class Assignment2 extends Base_Scene {
     row,
     row_i
   ) {
-    const blue = color(
-      255 * rand(),
-      255 * rand(),
-      255 * rand(),
-      1
-    );
+    const blue = color(255 * rand(), 255 * rand(), 255 * rand(), 1);
     let curr_transform = Mat4.identity();
     for (let i = 0; i < num_sides; i++) {
       const grav_vector = this.arb_rotation(i, num_sides).times(
@@ -1379,7 +1260,7 @@ export class Assignment2 extends Base_Scene {
       // update level here
     }
     // console.log(this.intersecting);
-    this.draw_ball(context, program_state, 0);
+    if (!this.draw_ball(context, program_state, 0)) return;
     if (this.TEST_COLLISION_BASIS) {
       this.draw_ball(context, program_state, 1);
       this.draw_ball(context, program_state, 2);
