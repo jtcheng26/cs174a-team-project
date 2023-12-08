@@ -4,6 +4,8 @@ import { GameManager, stringToMatrix, Level } from "./gameManager.js";
 import { Shape_From_File } from "./examples/obj-file-demo.js";
 import { Text_Demo, Text_Line } from "./examples/text-demo.js";
 
+import { rand } from "./rand.js";
+
 const {
   Vector,
   Vector3,
@@ -187,17 +189,17 @@ class Base_Scene extends Scene {
     // *** Materials
     this.materials = {
       plastic: new Material(new defs.Textured_Phong(), {
-        ambient: 0.2,
+        ambient: 0.3,
         diffusivity: 0.7,
         specularity: 0,
         color: hex_color("#ffffff"),
         texture: new Texture("assets/retro.png", "LINEAR_MIPMAP_LINEAR"),
       }),
       falling: new Material(new defs.Textured_Phong(), {
-        ambient: 0.3,
+        ambient: 0.4,
         diffusivity: 0.1,
         specularity: 0,
-        color: hex_color("#ffffff", 1),
+        color: hex_color("#eeeeee", 1),
         texture: new Texture("assets/stone.png", "LINEAR_MIPMAP_LINEAR"),
       }),
       level_color: new Material(new defs.Textured_Phong(), {
@@ -232,7 +234,7 @@ class Base_Scene extends Scene {
     // for (let i = 0; i < 20; i++) {
     //   let temp = [];
     //   for (let j = 0; j < 13; j++) {
-    //     temp.push(Math.floor(Math.random() * 2));
+    //     temp.push(Math.floor(rand() * 2));
     //   }
     //   this.levels.push(temp);
     // }
@@ -241,20 +243,20 @@ class Base_Scene extends Scene {
     this.stars_deque = [];
     for (let i = 0; i < 150; i++) {
       let star_trans = [
-        (Math.random() * 20 + 5) * (Math.random() >= 0.5 ? 1 : -1),
-        (Math.random() * 30 - 15) * (Math.random() >= 0.5 ? 1 : 1),
+        (rand() * 20 + 5) * (rand() >= 0.5 ? 1 : -1),
+        (rand() * 30 - 15) * (rand() >= 0.5 ? 1 : 1),
         -5 * (i % 10),
       ];
-      star_trans.push(Math.random() * 0.1);
+      star_trans.push(rand() * 0.1);
       this.stars_deque.push(star_trans);
     }
     for (let i = 0; i < 150; i++) {
       let star_trans = [
-        Math.random() * 10 - 5,
-        (Math.random() * 5 + 6) * (Math.random() >= 0.5 ? 1 : -1),
+        rand() * 10 - 5,
+        (rand() * 5 + 6) * (rand() >= 0.5 ? 1 : -1),
         -5 * (i % 10),
       ];
-      star_trans.push(Math.random() * 0.1);
+      star_trans.push(rand() * 0.1);
       this.stars_deque.push(star_trans);
     }
 
@@ -303,7 +305,7 @@ class Base_Scene extends Scene {
 
     this.intersecting = true;
 
-    this.deaths = 0
+    this.deaths = 0;
 
     //Need globally stored program time for smooth ball transitions
     this.mili_t = 0;
@@ -359,7 +361,7 @@ class Base_Scene extends Scene {
       for (let k = 0; k < 25; k++) {
         let row = [];
         for (let j = 0; j < config.NUM_SIDES * config.PANES_PER_SIDE; j++) {
-          let r = Math.random();
+          let r = rand();
           if (k < 6) row.push(1);
           else if (r < 0.5) row.push(1);
           else if (r < 0.7) row.push(3);
@@ -487,7 +489,7 @@ class Base_Scene extends Scene {
     );
 
     // *** Lights: *** Values of vector or point lights.
-    this.light_position = vec4(0, 0, 0.5, -0.15);
+    this.light_position = vec4(0, 0, 0.5,-0.15);
     // this.light_position = vec4(-0.1, -0.4, 1.2, Math.sin(program_state.animation_time/1000));
     // console.log(Math.sin(program_state.animation_time / 1000))
     program_state.lights = [
@@ -729,7 +731,7 @@ export class Assignment2 extends Base_Scene {
 
     let pos_sphere = this.sphere_transform.times(vec4(0, 0, 0, 1));
     if (pos_sphere[0] * grav_vector[0] + pos_sphere[1] * grav_vector[1] < -5) {
-      this.deaths += 0.5
+      this.deaths += 0.5;
       this.reset_level(program_state);
       return;
     }
@@ -805,17 +807,22 @@ export class Assignment2 extends Base_Scene {
     left_vector = this.rotation(i).times(vec4(-1, 0, 0, 1));
     const rotation = this.intersecting
       ? Mat4.rotation(
-          -program_state.animation_time * this.current_config.LEVEL_SPEED / 7 / 200,
+          (-program_state.animation_time * this.current_config.LEVEL_SPEED) /
+            7 /
+            200,
           right_vector[0],
           right_vector[1],
           0
         )
       : Mat4.rotation(
-        -program_state.animation_time * this.current_config.LEVEL_SPEED / 7 / 200 / 2,
-        right_vector[0],
-        right_vector[1],
-        0
-      )
+          (-program_state.animation_time * this.current_config.LEVEL_SPEED) /
+            7 /
+            200 /
+            2,
+          right_vector[0],
+          right_vector[1],
+          0
+        );
 
     let rotating_sphere = !this.TEST_COLLISION_BASIS
       ? this.sphere_transform.times(
@@ -865,7 +872,7 @@ export class Assignment2 extends Base_Scene {
             ) //.times(
             //   //  Mat4.rotation(-program_state.animation_time / 120, 1, 0, 0)
           );
-    const player_col = this.current_config.LEVEL_COLOR
+    const player_col = this.current_config.LEVEL_COLOR;
     this.shapes.sphere.draw(
       context,
       program_state,
@@ -875,50 +882,68 @@ export class Assignment2 extends Base_Scene {
       //   ambient: 0.2,
       // })
       this.materials.player.override({
-        color: this.current_config.LEVEL_COLOR
+        color: this.current_config.LEVEL_COLOR.times(1).plus(vec4(0,0,0,1)),
       })
     );
     // console.log(this.current_config.LEVEL_COLOR)
     // DRAW THE SCORE TEXT
     let level_string = "Level: " + this.current_config.id;
-    let funny_orbit = Mat4.identity()
-                      .times(
-                        Mat4.scale(
-                          this.SPHERE_RADIUS,
-                          this.SPHERE_RADIUS,
-                          this.SPHERE_RADIUS
-                          )
-                      );
+    let funny_orbit = Mat4.identity().times(
+      Mat4.scale(this.SPHERE_RADIUS, this.SPHERE_RADIUS, this.SPHERE_RADIUS)
+    );
     funny_orbit = funny_orbit.times(
-            Mat4.rotation(
-              this.rotation_side * this.current_config.ROTATION_ANGLE,
-              0,
-              0,
-              1
-            )
-          )
-        
+      Mat4.rotation(
+        this.rotation_side * this.current_config.ROTATION_ANGLE,
+        0,
+        0,
+        1
+      )
+    );
 
-    funny_orbit = funny_orbit.times(Mat4.scale(5, 5, 5)).times(Mat4.translation(0.1, -.2, -3));
-    this.shapes.cube.draw(context, program_state, funny_orbit, this.materials.test);
+    funny_orbit = funny_orbit
+      .times(Mat4.scale(5, 5, 5))
+      .times(Mat4.translation(0.1, -0.2, -3));
+    this.shapes.cube.draw(
+      context,
+      program_state,
+      funny_orbit,
+      this.materials.test
+    );
     for (let i = 0; i < 3; i++) {
-      for (let j = 0; j < 2; j++) {             // Find the matrix for a basis located along one of the cube's sides:
-          if (i == 2 && j == 0) {
-            let cube_side = Mat4.rotation(i == 0 ? Math.PI / 2 : 0, 1, 0, 0)
-                .times(Mat4.rotation(Math.PI * j - (i == 1 ? Math.PI / 2 : 0), 0, 1, 0))
-                .times(Mat4.translation(-.9, .9, 1.01));
-            let multi_line_string = level_string;
+      for (let j = 0; j < 2; j++) {
+        // Find the matrix for a basis located along one of the cube's sides:
+        if (i == 2 && j == 0) {
+          let cube_side = Mat4.rotation(i == 0 ? Math.PI / 2 : 0, 1, 0, 0)
+            .times(
+              Mat4.rotation(Math.PI * j - (i == 1 ? Math.PI / 2 : 0), 0, 1, 0)
+            )
+            .times(Mat4.translation(-0.9, 0.9, 1.01));
+          let multi_line_string = level_string;
 
-            this.shapes.text.set_string("Deaths: " + this.deaths, context.context);
-            this.shapes.text.draw(context, program_state, funny_orbit.times(cube_side)
-                .times(Mat4.scale(.15, .15, .15)).times(Mat4.translation(-.7,0,0)), this.materials.text_image);
-            // Move our basis down a line.
-            cube_side.post_multiply(Mat4.translation(0, .5, 0));
+          this.shapes.text.set_string(
+            "Deaths: " + this.deaths,
+            context.context
+          );
+          this.shapes.text.draw(
+            context,
+            program_state,
+            funny_orbit
+              .times(cube_side)
+              .times(Mat4.scale(0.15, 0.15, 0.15))
+              .times(Mat4.translation(-0.7, 0, 0)),
+            this.materials.text_image
+          );
+          // Move our basis down a line.
+          cube_side.post_multiply(Mat4.translation(0, 0.5, 0));
 
-            this.shapes.text.set_string(multi_line_string, context.context);
-            this.shapes.text.draw(context, program_state, funny_orbit.times(cube_side)
-                    .times(Mat4.scale(.15, .15, .15)), this.materials.text_image);
-          }
+          this.shapes.text.set_string(multi_line_string, context.context);
+          this.shapes.text.draw(
+            context,
+            program_state,
+            funny_orbit.times(cube_side).times(Mat4.scale(0.15, 0.15, 0.15)),
+            this.materials.text_image
+          );
+        }
       }
     }
   }
@@ -1073,9 +1098,9 @@ export class Assignment2 extends Base_Scene {
     row_i
   ) {
     const blue = color(
-      255 * Math.random(),
-      255 * Math.random(),
-      255 * Math.random(),
+      255 * rand(),
+      255 * rand(),
+      255 * rand(),
       1
     );
     let curr_transform = Mat4.identity();
