@@ -771,7 +771,7 @@ export class Run174A extends Base_Scene {
     );
     // console.log(this.current_config.LEVEL_COLOR)
     // DRAW THE SCORE TEXT
-    let level_string = "Level: " + this.current_config.id;
+    let level_string = "Level: " + (this.current_config.id + 1);
     let funny_orbit = Mat4.identity().times(
       Mat4.scale(this.SPHERE_RADIUS, this.SPHERE_RADIUS, this.SPHERE_RADIUS)
     );
