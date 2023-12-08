@@ -1,5 +1,9 @@
 # Run174
 
+<div style="text-align:center;">
+    <img src="./assets/gameplay.png" alt="Image Alt Text" width="800" height="500">
+</div>
+
 ## Theme of Animation
 
 ‘Run174’ is a spin on the classic flash game series ‘Run’, which chronicles the fate of a running alien as they attempt to navigate through a hole-filled tunnel. Our project will attempt to recreate the behavior of the game, implementing the movement of the main player, taking user input to rotate the reference frame of the camera (as the original game does), and implementing collision detection to track when a player’s run finally comes to an end. In addition, we add more variation in the levels. As you progress through the game, not only will the speed at which you travel through the tunnel increase, but you may encounter new terrain. While easier levels may include polygons with larger number of sides providing more surface area to land on, the harder levels towards the end may consist of squares with one pane per side. Attached are images from the original flash game, meant to give a basis for our TinyGL recreation. 
